@@ -55,27 +55,27 @@ first, as this is just a small extension to it.
 
 The added options are
 
-* `conanfile`: Path to the folder with the conanfile.[py|txt]. By default the root
+- `conanfile`: Path to the folder with the conanfile.[py|txt]. By default the root
   is assumed. The conanfile can be used to define the dependencies.
   Alternatively, you can also use `conan_requirements` to define
   the conan dependencies without a conanfile. This option is
   exclusive. If you define `conan_requirements`, this option is
   ignored.
-* `conan_recipes`: List of paths to further conan recipes. The conan package index
+- `conan_recipes`: List of paths to further conan recipes. The conan package index
   is far from perfect, so often you need to build your own recipes. You don't
   always want to upload those, so this argument gives you the option to integrate
   local recipes. Just the path to the folder containing the `conanfile.py`.
-* `conan_requirements`: Instead of providing a conanfile, you can simply state
+- `conan_requirements`: Instead of providing a conanfile, you can simply state
   the dependencies here. E.g. `["fmt/[>=10.0.0]"]` to add fmt in version >=10.0.0.
-* `conan_profile_settings`: Overwrite conan profile settings. Sometimes necessary
+- `conan_profile_settings`: Overwrite conan profile settings. Sometimes necessary
   because of ABI-problems, etc.
-* `wrapped_setup`: The setup-method that is going to be wrapped. This would allow
+- `wrapped_setup`: The setup-method that is going to be wrapped. This would allow
   you to extend already extended setup functions. By default, it is the `setup`
   of `skbuild`, which extends the `setup` of `setuptools`.
-* `conan_output_folder`: The folder where conan will write the generated files.
+- `conan_output_folder`: The folder where conan will write the generated files.
   No real reason to change it unless the default creates conflicts with some other
   tool.
-* `cmake_args`: This is actually an argument of `skbuild` but we will extend it.
+- `cmake_args`: This is actually an argument of `skbuild` but we will extend it.
   It hands cmake custom arguments. We use it to tell cmake about the conan modules.
 
 An example usage could be as follows
@@ -153,8 +153,7 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     # cmake_args=[]
     # There are further options, but you should be fine with these above.
     # ~~~~~~~~ Conan ~~~~~~~~~~~~~
-    conan_recipes=["./cmake/conan/gurobi_public/",
-                   "./cmake/conan/cgal_custom"],
+    conan_recipes=["./cmake/conan/gurobi_public/", "./cmake/conan/cgal_custom"],
 )
 ```
 
