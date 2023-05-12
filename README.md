@@ -107,5 +107,6 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+* *0.1.3* Fixing bug if no settings are given.
 * *0.1.2* Moved workaround into setup to make it more explicit.
 * *0.1.1* First tested and apparently working version.
