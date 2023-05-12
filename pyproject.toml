@@ -13,6 +13,7 @@ authors = [
 ]
 description = "An extension for scikit-build to add C++-dependencies as easily as Python dependencies via conan. "
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -26,3 +27,6 @@ dependencies = [
     "cmake>=3.23",
     "ninja"
 ]
+
+[project.urls]
+Homepage = "https://github.com/d-krupke/skbuild-conan"
