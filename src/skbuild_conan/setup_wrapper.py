@@ -1,3 +1,4 @@
+import sys
 import typing
 import skbuild
 
@@ -43,6 +44,13 @@ def setup(
         documentation of `skbuild` and `setuptools` for this.
     :return: The returned values of the wrapped setup.
     """
+
+    # Workaround for mismatching ABI with GCC on Linux
+    if sys.platform == "linux" and "compiler.libcxx" not in conan_profile_settings:
+        print('Using workaround and setting "compiler.libcxx=libstdc++11"')
+        conan_profile_settings = conan_profile_settings.copy()
+        conan_profile_settings["compiler.libcxx"]= "libstdc++11"
+
     conan_helper = ConanHelper(
         output_folder=conan_output_folder,
         local_recipes=conan_recipes,

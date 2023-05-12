@@ -71,9 +71,7 @@ class ConanHelper:
         """
         self.create_profile()
         self.install_from_paths(self.local_recipes)
-        if sys.platform == "linux" and "compiler.libcxx" not in self.settings:
-            print('Using workaround and setting "compiler.libcxx=libstdc++11"')
-            self.settings.update({"compiler.libcxx": "libstdc++11"})
+
         cmd = f"-m conans.conan install"
         if requirements:
             # requirements passed from Python directly
