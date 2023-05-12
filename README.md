@@ -104,3 +104,7 @@ for a full example.
 We are happy about any contribution and also about reported issues.
 Sometimes it can take some time before we are able to take care
 of something, as we need to prioritize quite often.
+
+## Changelog
+
+* *0.1.1* First tested and apparently working version.
