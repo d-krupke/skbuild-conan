@@ -18,7 +18,6 @@ can scare pure Python users).
 
 We (TU Braunschweig, Algorithms Group) are not affiliated with scikit-build or conan.
 
-
 ## Installation
 
 TBD
@@ -30,3 +29,8 @@ We just added a few additional arguments to `setup()`.
 
 See [how to use scikit-build](https://scikit-build.readthedocs.io/en/latest/usage.html#example-of-setup-py-cmakelists-txt-and-pyproject-toml) first, as this is just a small extension to it.
 
+## Contribution
+
+We are happy about any contribution and also about reported issues.
+Sometimes it can take some time before we are able to take care
+of something, as we need to prioritize quite often.

@@ -4,14 +4,16 @@ import skbuild
 from .conan_helper import ConanHelper
 
 
-def setup(conanfile: str = ".",
-          conan_recipes: typing.List[str] = None,
-          conan_requirements: typing.List[str] = None,
-          conan_output_folder=".conan",
-          conan_profile_settings: typing.Dict=None,
-          wrapped_setup: typing.Callable = skbuild.setup,
-          cmake_args: typing.List[str] = None,
-          **kwargs):
+def setup(
+    conanfile: str = ".",
+    conan_recipes: typing.List[str] = None,
+    conan_requirements: typing.List[str] = None,
+    conan_output_folder=".conan",
+    conan_profile_settings: typing.Dict = None,
+    wrapped_setup: typing.Callable = skbuild.setup,
+    cmake_args: typing.List[str] = None,
+    **kwargs
+):
     """
     An extended setup that takes care of conan dependencies.
 
@@ -41,9 +43,11 @@ def setup(conanfile: str = ".",
         documentation of `skbuild` and `setuptools` for this.
     :return: The returned values of the wrapped setup.
     """
-    conan_helper = ConanHelper(output_folder=conan_output_folder,
-                               local_recipes=conan_recipes,
-                               settings=conan_profile_settings)
+    conan_helper = ConanHelper(
+        output_folder=conan_output_folder,
+        local_recipes=conan_recipes,
+        settings=conan_profile_settings,
+    )
     conan_helper.install(path=conanfile, requirements=conan_requirements)
     cmake_args = cmake_args if cmake_args else []
     cmake_args += conan_helper.cmake_args()

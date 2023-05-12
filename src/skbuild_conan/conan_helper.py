@@ -46,7 +46,8 @@ class ConanHelper:
         for path in paths:
             package_info = self._conan_to_json(["inspect", "-f", "json", path])
             conan_list = self._conan_to_json(
-                ["list", "-c", "-f", "json", package_info["name"]])
+                ["list", "-c", "-f", "json", package_info["name"]]
+            )
             package_id = f"{package_info['name']}/{package_info['version']}"
             if package_id in conan_list["Local Cache"].keys():
                 print(package_info["name"], "already available.")
@@ -71,7 +72,7 @@ class ConanHelper:
         self.create_profile()
         self.install_from_paths(self.local_recipes)
         if sys.platform == "linux" and "compiler.libcxx" not in self.settings:
-            print("Using workaround and setting \"compiler.libcxx=libstdc++11\"")
+            print('Using workaround and setting "compiler.libcxx=libstdc++11"')
             self.settings.update({"compiler.libcxx": "libstdc++11"})
         cmd = f"-m conans.conan install"
         if requirements:
@@ -95,10 +96,16 @@ class ConanHelper:
         """
         Has to be appended to `cmake_args` in `setup(...)`.
         """
-        toolchain_path = os.path.abspath(f'{self.generator_folder}/conan_toolchain.cmake')
+        toolchain_path = os.path.abspath(
+            f"{self.generator_folder}/conan_toolchain.cmake"
+        )
         if not os.path.exists(toolchain_path):
-            raise RuntimeError("conan_toolchain.cmake not found. Make sure you"
-                               " specified 'CMakeDeps' and 'CMakeToolchain' as"
-                               " generators.")
-        return [f"-DCMAKE_TOOLCHAIN_FILE={toolchain_path}",
-                f"-DCMAKE_PREFIX_PATH={self.generator_folder}"]
+            raise RuntimeError(
+                "conan_toolchain.cmake not found. Make sure you"
+                " specified 'CMakeDeps' and 'CMakeToolchain' as"
+                " generators."
+            )
+        return [
+            f"-DCMAKE_TOOLCHAIN_FILE={toolchain_path}",
+            f"-DCMAKE_PREFIX_PATH={self.generator_folder}",
+        ]
