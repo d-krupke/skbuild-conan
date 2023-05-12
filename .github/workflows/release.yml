@@ -10,11 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/<your-pypi-project-name>
+      url: https://pypi.org/p/skbuild_conan
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     # retrieve your distributions here
-
+    - name: Build
+      run: python setup.py sdist
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
