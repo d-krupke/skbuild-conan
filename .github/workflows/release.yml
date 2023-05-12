@@ -1,9 +1,9 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
+
 
 jobs:
   pypi-publish:
@@ -17,6 +17,7 @@ jobs:
     steps:
     # retrieve your distributions here
     - uses: actions/checkout@master
+    - uses: actions/setup-python@v4
     - name: Build SDist and wheel
       run: pipx run build
     - name: Publish package distributions to PyPI
