@@ -16,7 +16,7 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     # retrieve your distributions here
-    - name: Build
-      run: python setup.py sdist
+    - name: Build SDist and wheel
+      run: pipx run build
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
