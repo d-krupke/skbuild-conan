@@ -33,7 +33,7 @@ requires = [
     "conan>=2.0.0",
     "setuptools",
     "scikit-build>=0.17.3",
-    "skbuild_conan@git+https://github.com/d-krupke/skbuild-conan.git",
+    "skbuild-conan",
     "cmake>=3.23",
     "ninja",
 ]
@@ -98,6 +98,25 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
 
 See [./examples/simple_skbuild_conan_example](./examples/simple_skbuild_conan_example)
 for a full example.
+
+## Common problems
+
+### ABI problems: Undefined symbole `...__cxx1112basic_stringIcSt11char_...`
+
+This problem should be automatically fixed. Please open an issue if you still encounter it.
+
+See [https://docs.conan.io/1/howtos/manage_gcc_abi.html](https://docs.conan.io/1/howtos/manage_gcc_abi.html) for more details.
+
+### glibcxx problems: 
+
+If you get an error such as 
+```
+ImportError: /home/krupke/anaconda3/envs/mo310/bin/../lib/libstdc++.so.6: version `GLIBCXX_3.4.30' not found (required by /home/krupke/anaconda3/envs/mo310/lib/python3.10/site-packages/samplns/cds/_cds_bindings.cpython-310-x86_64-linux-gnu.so)
+```
+you are probably using conda (good!) but need to update glibcxx. Install the latest version by 
+```sh
+conda install -c conda-forge libstdcxx-ng
+```
 
 ## Contribution
 
