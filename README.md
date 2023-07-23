@@ -15,7 +15,7 @@ For a few projects, we wrote individual code to fetch the dependencies
 or just added instructions on how to install them (which of course
 can scare pure Python users).
 
-**This project is currently just nice interface to hacks we accumulated. We try to make it
+**This project is currently just a nice interface to hacks we accumulated. We try to make it
 as universal and robust as possible as we rely on this for multiple projects, but we are
 working fast-paced and will quickly abandon this tool once there is something better.**
 
@@ -23,7 +23,7 @@ We (TU Braunschweig, Algorithms Group) are not affiliated with scikit-build or c
 
 ## Installation
 
-You can simply add `"skbuild_conan@git+https://github.com/d-krupke/skbuild-conan.git",`
+You can simply add `"skbuild_conan",`
 to `requires=[...]` in `pyproject.toml`.
 E.g. The `pyproject.toml` could look like this
 
@@ -42,8 +42,7 @@ build-backend = "setuptools.build_meta"
 
 If you want to use for example `setup.py build`, you need to
 install `skbuild_conan` to your environment. You can do so
-by ` pip install skbuild_conan@git+https://github.com/d-krupke/skbuild-conan.git`.
-We will also add this tool to PyPI soon.
+by ` pip install skbuild_conan`.
 
 ## Usage
 
