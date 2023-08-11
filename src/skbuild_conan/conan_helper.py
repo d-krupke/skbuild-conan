@@ -87,7 +87,7 @@ class ConanHelper:
         # that CMake still finds it.
         cmd += f" --output-folder={self.generator_folder}"
         # Making sure  the right generators are used.
-        cmd += f" -g CMakeDeps -g CMakeToolchain"
+        cmd += " -g CMakeDeps -g CMakeToolchain"
         subprocess.run([sys.executable, *cmd.split(" ")], check=True)
 
     def cmake_args(self):
