@@ -100,6 +100,8 @@ for a full example.
 
 ## Common problems
 
+> Feel free to copy these comments. Attribution is appreciated but not necessary.
+
 ### ABI problems: Undefined symbole `...__cxx1112basic_stringIcSt11char_...`
 
 This problem should be automatically fixed. Please open an issue if you still encounter it.
@@ -116,6 +118,20 @@ you are probably using conda (good!) but need to update glibcxx. Install the lat
 ```sh
 conda install -c conda-forge libstdcxx-ng
 ```
+
+In some cases, this still is not enough, especially if you are using a very up to date rolling-release distribution, such as Arch Linux, or if you installed `libstdcxx-ng` some time ago.
+This could lead to the system having a slightly newer version of glibcxx than conda.
+First try to upgrade `libstdcxx-ng` with
+```sh
+conda upgrade -c conda-forge --all    
+```
+If this does not help, you can try to install g++ (caveat: Linux only, Mac OS needs clang) into your conda environment and use it to compile the package.
+```sh
+conda install -c conda-forge gxx_linux-64  # This should enforce a modern g++ version.
+conda install -c conda-forge cxx-compiler  # This should make sure that the compiler is used.
+```
+Note that just the second command first may install an outdated g++ version (at least I observed that it installed gcc11 instead of gcc13, messing up my whole environment as this is too old).
+When compiling from source, you probably should delete the `_skbuild`-folder first.
 
 ## Contribution
 
