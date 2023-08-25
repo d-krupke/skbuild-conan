@@ -98,6 +98,31 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
 See [./examples/simple_skbuild_conan_example](./examples/simple_skbuild_conan_example)
 for a full example.
 
+## Examples
+
+If you do not have any C++-dependencies, you can just use [scikit-build](https://github.com/scikit-build/scikit-build) which also provides a [set of examples](https://github.com/scikit-build/scikit-build-sample-projects/tree/master/projects).
+
+### Simple Example with fmt
+
+The example in [./examples/simple_skbuild_conan_example](./examples/simple_skbuild_conan_example) provides a minimal example of how to use fmt in Python using PyBind11 and skbuild_conan.
+fmt is a nice library for formatting strings and is used by many other libraries.
+Python, of course, comes with extensive inbuilt string formatting, thus, this example is not very useful.
+However, it is a good starting point to understand how to use skbuild_conan with a simple external library.
+
+### Complex Example with CGAL: Using CGAL in Python
+
+Sometimes, your dependencies are significantly more complex.
+For example, you may want to do some geometry processing and use CGAL.
+CGAL is a very complex library with many dependencies, but also the most powerful library for geometric operations and often the only choice for many problems.
+CGAL has a conan recipe, but it took a while until it received updates for conan2, such that we wrote our own recipe.
+In the meantime, the official recipe was updated, but for the sake of the example, we will use our own recipe.
+In case you are faced with the problem of an outdated conan recipe (or none at all), you can use the same trick.
+
+See [./examples/cgal_skbuild_conan_example](./examples/cgal_skbuild_conan_example) for an example of how to use CGAL via a custom conan recipe in Python using PyBind11 and skbuild_conan.
+
+Note that there is also the [cgalpy](https://bitbucket.org/taucgl/cgal-python-bindings/) project by my friends at TAU (which I visited for a few months in 2022/2023), which is a nearly complete and efficient wrapper of CGAL.
+It may need some more documentation, but Efi put a lot of thought into efficiency and configurability.
+
 ## Common problems
 
 > Feel free to copy these comments. Attribution is appreciated but not necessary.
@@ -131,7 +156,7 @@ conda install -c conda-forge gxx_linux-64  # This should enforce a modern g++ ve
 conda install -c conda-forge cxx-compiler  # This should make sure that the compiler is used.
 ```
 Note that just the second command first may install an outdated g++ version (at least I observed that it installed gcc11 instead of gcc13, messing up my whole environment as this is too old).
-When compiling from source, you probably should delete the `_skbuild`-folder first.
+When compiling from source, you probably should delete the `_skbuild`-folder and do a proper uninstall of the previous installation first.
 
 ## Contribution
 
