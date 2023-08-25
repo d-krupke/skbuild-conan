@@ -44,13 +44,15 @@ class ConanHelper:
         similar.
         """
         for path in paths:
+            if not os.path.exists(path):
+                raise RuntimeError(f"Conan recipe '{path}' does not exist.")
             package_info = self._conan_to_json(["inspect", "-f", "json", path])
             conan_list = self._conan_to_json(
                 ["list", "-c", "-f", "json", package_info["name"]]
             )
             package_id = f"{package_info['name']}/{package_info['version']}"
             if package_id in conan_list["Local Cache"].keys():
-                print(package_info["name"], "already available.")
+                print(package_id, "already available. Not installing again.")
                 continue
             cmd = (
                 f"-m conans.conan create {path} -pr:b default -pr:h default"

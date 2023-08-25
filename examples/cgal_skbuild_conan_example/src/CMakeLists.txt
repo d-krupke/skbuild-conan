@@ -1,0 +1,1 @@
+add_subdirectory(cgal_skbuild_conan_example)
