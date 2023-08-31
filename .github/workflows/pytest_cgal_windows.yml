@@ -18,24 +18,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest
+          python3 -m pip install --upgrade pip
+          python3 -m  pip install flake8 pytest
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Install MSVC Build Tools
-        run: |
-            choco install visualstudio2019buildtools --package-parameters "--includeRecommended --includeOptional"
-      - name: Set up MSVC environment
-        run: |
-            "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-
+          python3 -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - uses: ilammy/msvc-dev-cmd@v1
       - name: build and install
         run: |
-          pip install examples/cgal_skbuild_conanio_example
+          python3 -m pip install examples/cgal_skbuild_conanio_example
       - name: Test with pytest
         run: |
-          pytest examples/cgal_skbuild_conanio_example/tests
+          python3 -m pytest examples/cgal_skbuild_conanio_example/tests
