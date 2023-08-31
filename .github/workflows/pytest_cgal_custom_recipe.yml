@@ -1,14 +1,17 @@
-name: Test expensive CGAL example
+name: Test expensive CGAL example with  custom recipe
 
-on: workflow_dispatch
-
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
-        runs-on: [ubuntu-latest, windows-latest]
+        python-version: ["3.7", "3.10"]
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -28,7 +31,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: build and install
         run: |
-          pip install examples/cgal_skbuild_conanio_example
+          pip install examples/cgal_skbuild_conan_example
       - name: Test with pytest
         run: |
-          pytest examples/cgal_skbuild_conanio_example/tests
+          pytest examples/cgal_skbuild_conan_example/tests
