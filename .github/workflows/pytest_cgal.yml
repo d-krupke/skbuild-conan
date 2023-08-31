@@ -20,6 +20,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            choco install -y visualstudio2019buildtools --package-parameters "--includeRecommended --includeOptional"
+          fi
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
