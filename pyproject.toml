@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel", "Cython"]
+requires = ["setuptools>=45", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -7,7 +7,7 @@ where = ["src"]
 
 [project]
 name = "skbuild_conan"
-dynamic = ["version"]
+version = "v0.1.4"
 authors = [
     { name = "TU Braunschweig, IBR, Algorithms Group (Dominik Krupke)", email = "krupke@ibr.cs.tu-bs.de" },
 ]
@@ -27,8 +27,6 @@ dependencies = [
     "cmake>=3.23",
     "ninja"
 ]
-
-[tool.setuptools_scm]
 
 [project.urls]
 Homepage = "https://github.com/d-krupke/skbuild-conan"
