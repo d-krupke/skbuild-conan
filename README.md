@@ -1,5 +1,8 @@
 # skbuild-conan: A conan extension for scikit-build
 
+![PyPI](https://img.shields.io/pypi/v/skbuild-conan)
+![License](https://img.shields.io/github/license/d-krupke/skbuild-conan)
+
 [PyBind11](https://github.com/pybind/pybind11) and
 [scitkit-build](https://github.com/scikit-build/scikit-build)
 enable us to easily write native C++-modules for Python.
