@@ -4,7 +4,6 @@ on:
   release:
     types: [published]
 
-
 jobs:
   pypi-publish:
     name: Upload release to PyPI
@@ -13,12 +12,12 @@ jobs:
       name: pypi
       url: https://pypi.org/p/skbuild_conan
     permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
-    # retrieve your distributions here
-    - uses: actions/checkout@master
-    - uses: actions/setup-python@v4
-    - name: Build SDist and wheel
-      run: pipx run build
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      # retrieve your distributions here
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v4
+      - name: Build SDist and wheel
+        run: pipx run build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,9 +1,0 @@
-{
-    "version": 4,
-    "vendor": {
-        "conan": {}
-    },
-    "include": [
-        "/Users/krupke/Repositories/skbuild-conan/examples/cgal_skbuild_conanio_example/.conan/CMakePresets.json"
-    ]
-}

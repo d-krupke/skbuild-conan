@@ -1,6 +1,6 @@
-# Here we define how to compile the C++-part.
-# It does not differ from a normal CMakeLists for scitkit-build.
-# All the magic for conan is internally added via command line arguments.
+# Here we define how to compile the C++-part. It does not differ from a normal
+# CMakeLists for scitkit-build. All the magic for conan is internally added via
+# command line arguments.
 
 # ======================================
 # Boilerplate C++ stuff you see in most cmakes

@@ -20,12 +20,24 @@ class ConanHelper:
         self.settings = settings if settings else {}
         self._check_conan_version()
 
+    def _log(self, msg: str):
+        print(f"[skbuild-conan] {msg}")
+
+    def _shell(self, cmd: typing.List[str]) -> str:
+        printable_cmd = " ".join(cmd)
+        # color the command blue
+        printable_cmd = f"\033[94m{printable_cmd}\033[0m"
+        self._log(printable_cmd)
+        out = subprocess.check_output(cmd).decode()
+        return out
+
     def conan_version(self):
         args = [sys.executable, "-m", "conans.conan", "-v"]
-        version = subprocess.check_output(args).decode().split(" ")[-1]
+        version = self._shell(args).split(" ")[-1]
         return version
 
     def _check_conan_version(self):
+        self._log("Checking Conan version...")
         version = self.conan_version()
         if version[0] != "2":
             raise RuntimeError(f"Conan 2 required. Current version {version}.")
@@ -35,7 +47,8 @@ class ConanHelper:
         Runs conan with the args and parses the output as json.
         """
         args = [sys.executable, "-m", "conans.conan"] + args
-        return json.loads(subprocess.check_output(args).decode())
+        data = json.loads(self._shell(args))
+        return data
 
     def install_from_paths(self, paths: typing.List[str]):
         """
@@ -44,6 +57,7 @@ class ConanHelper:
         similar.
         """
         for path in paths:
+            self._log(f"Installing {path}...")
             if not os.path.exists(path):
                 raise RuntimeError(f"Conan recipe '{path}' does not exist.")
             package_info = self._conan_to_json(["inspect", "-f", "json", path])
@@ -52,31 +66,48 @@ class ConanHelper:
             )
             package_id = f"{package_info['name']}/{package_info['version']}"
             if package_id in conan_list["Local Cache"].keys():
-                print(package_id, "already available. Not installing again.")
+                self._log(f"{package_id} already available. Not installing again.")
                 continue
             cmd = [
-                "-m", "conans.conan", "create", path ,"-pr:b","default", "-pr:h", "default",
-                "-s", "build_type=Release", "--build=missing"
+                "-m",
+                "conans.conan",
+                "create",
+                path,
+                "-pr:b",
+                "default",
+                "-pr:h",
+                "default",
+                "-s",
+                "build_type=Release",
+                "--build=missing",
             ]
-            subprocess.run([sys.executable]+cmd, check=True)
+            self._shell([sys.executable] + cmd)
 
     def create_profile(self):
+        """
+        Creates a default profile if it does not exist.
+        """
+        self._log("Creating conan profile...")
         # check if profile exists or create a default one automatically.
         if "default" in self._conan_to_json(["profile", "list", "-f", "json"]):
+            self._log("Profile already exists.")
             return  # Profile already exists
-        cmd = ["-m" ,"conans.conan", "profile", "detect"]
-        subprocess.run([sys.executable]+cmd, check=False, stderr=None)
+        cmd = ["-m", "conans.conan", "profile", "detect"]
+        try:
+            self._shell([sys.executable] + cmd)
+        except subprocess.CalledProcessError:
+            pass
 
-    def install(self, 
-                path: str = ".", 
-                requirements: typing.Optional[typing.List[str]] = None):
+    def install(
+        self, path: str = ".", requirements: typing.Optional[typing.List[str]] = None
+    ):
         """
         Running conan to get C++ dependencies
         """
         self.create_profile()
         self.install_from_paths(self.local_recipes)
-
-        cmd = ["-m" ,"conans.conan", "install"]
+        self._log("Preparing conan dependencies for building package...")
+        cmd = ["-m", "conans.conan", "install"]
         if requirements:
             # requirements passed from Python directly
             for req in requirements:
@@ -91,8 +122,8 @@ class ConanHelper:
         # that CMake still finds it.
         cmd += [f"--output-folder={self.generator_folder}"]
         # Making sure  the right generators are used.
-        cmd += ["-g" ,"CMakeDeps", "-g", "CMakeToolchain"]
-        subprocess.run([sys.executable]+cmd, check=True)
+        cmd += ["-g", "CMakeDeps", "-g", "CMakeToolchain"]
+        self._shell([sys.executable] + cmd)
 
     def cmake_args(self):
         """

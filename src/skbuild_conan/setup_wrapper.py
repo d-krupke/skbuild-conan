@@ -7,13 +7,13 @@ from .conan_helper import ConanHelper
 
 def setup(
     conanfile: str = ".",
-    conan_recipes: typing.List[str] = None,
-    conan_requirements: typing.List[str] = None,
+    conan_recipes: typing.Optional[typing.List[str]] = None,
+    conan_requirements: typing.Optional[typing.List[str]] = None,
     conan_output_folder=".conan",
-    conan_profile_settings: typing.Dict = None,
+    conan_profile_settings: typing.Optional[typing.Dict] = None,
     wrapped_setup: typing.Callable = skbuild.setup,
-    cmake_args: typing.List[str] = None,
-    **kwargs
+    cmake_args: typing.Optional[typing.List[str]] = None,
+    **kwargs,
 ):
     """
     An extended setup that takes care of conan dependencies.
@@ -48,16 +48,41 @@ def setup(
     # Workaround for mismatching ABI with GCC on Linux
     conan_profile_settings = conan_profile_settings if conan_profile_settings else {}
     if sys.platform == "linux" and "compiler.libcxx" not in conan_profile_settings:
-        print('Using workaround and setting "compiler.libcxx=libstdc++11"')
+        print(
+            '[skbuild-conan] Using workaround and setting "compiler.libcxx=libstdc++11"'
+        )
         conan_profile_settings = conan_profile_settings.copy()
-        conan_profile_settings["compiler.libcxx"]= "libstdc++11"
-
-    conan_helper = ConanHelper(
-        output_folder=conan_output_folder,
-        local_recipes=conan_recipes,
-        settings=conan_profile_settings,
+        conan_profile_settings["compiler.libcxx"] = "libstdc++11"
+    try:
+        conan_helper = ConanHelper(
+            output_folder=conan_output_folder,
+            local_recipes=conan_recipes,
+            settings=conan_profile_settings,
+        )
+        conan_helper.install(path=conanfile, requirements=conan_requirements)
+        cmake_args = cmake_args if cmake_args else []
+        cmake_args += conan_helper.cmake_args()
+    except Exception as e:
+        # Setup could not be completed. Give debugging information in red and abort.
+        print(f"\033[91m[skbuild-conan] {e}\033[0m")
+        print(
+            "\033[91m[skbuild-conan] skbuild_conan failed to install dependencies.\033[0m"
+        )
+        print("There are several reasons why this could happen:")
+        print(
+            "1. A mistake by the developer of the package you are trying to install. Maybe a wrongly defined dependency?"
+        )
+        print("2. An unexpected conflict with an already existing conan configuration.")
+        print("3. A rare downtime of the conan package index.")
+        print(
+            "4. A bug in skbuild_conan. Please report it at https://github.com/d-krupke/skbuild-conan/issues"
+        )
+        print(
+            "5. Your system does not have a C++-compiler installed. Please install one."
+        )
+        raise e
+    print("[skbuild-conan] Setup of conan dependencies finished. cmake args:", cmake_args)
+    print(
+        "[skbuild-conan] See https://github.com/d-krupke/skbuild-conan if you encounter problems."
     )
-    conan_helper.install(path=conanfile, requirements=conan_requirements)
-    cmake_args = cmake_args if cmake_args else []
-    cmake_args += conan_helper.cmake_args()
     return wrapped_setup(cmake_args=cmake_args, **kwargs)
