@@ -6,6 +6,30 @@ import typing
 import io
 from contextlib import redirect_stdout
 
+from conan.cli.cli import Cli as ConanCli
+from conan.api.conan_api import ConanAPI
+
+class EnvContextManager:
+
+    def __init__(self, env: typing.Optional[typing.Dict[str, str]]):
+        self.env = env
+        self.old_env = {}
+
+    def __enter__(self):
+        if not self.env:
+            return
+        for key, val in self.env.items():
+            self.old_env[key] = os.environ.get(key)
+            os.environ[key] = val
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.env:
+            return
+        for key, val in self.old_env.items():
+            if val is None:
+                del os.environ[key]
+            else:
+                os.environ[key] = val
 
 class ConanHelper:
     """
@@ -28,39 +52,37 @@ class ConanHelper:
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
         self.profile = profile
-        self.env = os.environ.copy()
+        self.env = env
         if env:
             self._log(f"Temporarily overriding environment variables: {env}")
-            self.env.update(env)
-        # fix to allow `python -m conans.conan ...` to work without pre-installing conan
-        if "PYTHONPATH" in self.env:
-            self.env[
-                "PYTHONPATH"
-            ] = f"{self.env['PYTHONPATH']}:{self._get_path_of_conan_installation()}"
-        else:
-            self.env["PYTHONPATH"] = self._get_path_of_conan_installation()
-        self._log(f"Temporarily changing PYTHONPATH to {self.env['PYTHONPATH']}")
         self._check_conan_version()
 
-    def _get_path_of_conan_installation(self) -> str:
-        import conan
-
-        return ":".join(sys.path + [os.path.dirname(os.path.dirname(conan.__file__))])
 
     def _log(self, msg: str):
         print(f"[skbuild-conan] {msg}")
-
-    def _shell(self, cmd: typing.List[str]) -> str:
+    
+    def _conan_cli(self, cmd: typing.List[str]) -> str:
         printable_cmd = " ".join(cmd)
         # color the command blue
-        printable_cmd = f"\033[94m{printable_cmd}\033[0m"
+        printable_cmd = f"\033[94mconan {printable_cmd}\033[0m"
         self._log(printable_cmd)
-        out = subprocess.check_output(cmd, env=self.env).decode()
+
+        f = io.StringIO()
+        conan_api = ConanAPI()
+        conan_cli = ConanCli(conan_api)
+        with redirect_stdout(f):
+            with EnvContextManager(self.env):
+                try:
+                    conan_cli.run(cmd)
+                except BaseException as e:
+                    error = conan_cli.exception_exit_error(e)
+        out = f.getvalue()
+        self._log(out)
         return out
 
     def conan_version(self):
-        args = [sys.executable, "-m", "conans.conan", "-v"]
-        version = self._shell(args).split(" ")[-1]
+        args = ["-v"]
+        version = self._conan_cli(args).split(" ")[-1]
         return version
 
     def _check_conan_version(self):
@@ -73,8 +95,8 @@ class ConanHelper:
         """
         Runs conan with the args and parses the output as json.
         """
-        args = [sys.executable, "-m", "conans.conan"] + args
-        data = json.loads(self._shell(args))
+        args = args
+        data = json.loads(self._conan_cli(args))
         return data
 
     def install_from_paths(self, paths: typing.List[str]):
@@ -96,8 +118,6 @@ class ConanHelper:
                 self._log(f"{package_id} already available. Not installing again.")
                 continue
             cmd = [
-                "-m",
-                "conans.conan",
                 "create",
                 path,
                 "-pr",
@@ -106,7 +126,7 @@ class ConanHelper:
                 "build_type=Release",
                 "--build=missing",
             ]
-            self._shell([sys.executable] + cmd)
+            self._conan_cli(cmd)
 
     def create_profile(self):
         """
@@ -117,8 +137,8 @@ class ConanHelper:
         if self.profile in self._conan_to_json(["profile", "list", "-f", "json"]):
             self._log("Profile already exists.")
             return  # Profile already exists
-        cmd = ["-m", "conans.conan", "profile", "detect", "--name", self.profile]
-        self._shell([sys.executable] + cmd)
+        cmd = ["profile", "detect", "--name", self.profile]
+        self._conan_cli( cmd)
 
     def install(
         self, path: str = ".", requirements: typing.Optional[typing.List[str]] = None
@@ -129,7 +149,7 @@ class ConanHelper:
         self.create_profile()
         self.install_from_paths(self.local_recipes)
         self._log("Preparing conan dependencies for building package...")
-        cmd = ["-m", "conans.conan", "install"]
+        cmd = [ "install"]
         if requirements:
             # requirements passed from Python directly
             for req in requirements:
@@ -147,7 +167,7 @@ class ConanHelper:
         cmd += ["-g", "CMakeDeps", "-g", "CMakeToolchain"]
         # profile
         cmd += ["-pr", self.profile]
-        self._shell([sys.executable] + cmd)
+        self._conan_cli( cmd)
 
     def cmake_args(self):
         """
