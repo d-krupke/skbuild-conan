@@ -76,6 +76,7 @@ class ConanHelper:
                     conan_cli.run(cmd)
                 except BaseException as e:
                     error = conan_cli.exception_exit_error(e)
+                    raise
         out = f.getvalue()
         self._log(out)
         return out
