@@ -26,10 +26,12 @@ class ConanHelper:
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
         self.profile = profile
-        self.env = os.environ.copy()
+        #self.env = os.environ.copy()
+        self.env = None
         if env:
-            self._log(f"Temporary overriding environment variables: {env}")
-            self.env.update(env)
+            self._log(f"Temporarily overriding environment variables: {env}")
+            #self.env.update(env)
+            self.env = env
         self._check_conan_version()
 
     def _log(self, msg: str):

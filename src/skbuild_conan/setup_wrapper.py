@@ -82,7 +82,8 @@ def setup(
         )
         print("There are several reasons why this could happen:")
         print(
-            "1. A mistake by the developer of the package you are trying to install. Maybe a wrongly defined dependency?"
+            "1. A mistake by the developer of the package you are trying to install."
+            + " Maybe a wrongly defined dependency?"
         )
         print("2. An unexpected conflict with an already existing conan configuration.")
         print("3. A rare downtime of the conan package index.")

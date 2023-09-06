@@ -27,7 +27,7 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: build and install
         run: |
-          pip install examples/cgal_skbuild_conanio_example
+          pip install --verbose examples/cgal_skbuild_conanio_example
       - name: Test with pytest
         run: |
           pytest examples/cgal_skbuild_conanio_example/tests

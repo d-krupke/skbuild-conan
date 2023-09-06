@@ -1,6 +1,6 @@
 """
-An extension for scikit-build to add C++-dependencies as easily as Python dependencies via
-conan.
+An extension for scikit-build to add C++-dependencies as easily as Python dependencies
+via conan.
 """
 from .setup_wrapper import setup
 
@@ -12,3 +12,5 @@ try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     pass  # package is not installed
+
+__all = ["setup"]
