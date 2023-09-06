@@ -40,7 +40,7 @@ class ConanHelper:
         # color the command blue
         printable_cmd = f"\033[94m{printable_cmd}\033[0m"
         self._log(printable_cmd)
-        out = subprocess.check_output(cmd).decode()
+        out = subprocess.check_output(cmd, env=self.env).decode()
         return out
 
     def conan_version(self):

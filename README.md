@@ -212,6 +212,8 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.0.1_ Fixing issue with env variables. Now the old environment is copied and updated.
+- _1.0.0_ Custom conan profile and workaround for anaconda problem.
 - _0.2.0_ Improved logging.
 - _0.1.4_ Fixing problem with paths that contain spaces. Switching back to manual versioning.
 - _0.1.3_ Fixing bug if no settings are given.
