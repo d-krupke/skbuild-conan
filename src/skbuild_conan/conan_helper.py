@@ -7,8 +7,6 @@ import io
 from contextlib import redirect_stdout
 
 
-
-
 class ConanHelper:
     """
     The ConanHelper is used for installing conan dependencies automatically
@@ -36,16 +34,18 @@ class ConanHelper:
             self.env.update(env)
         # fix to allow `python -m conans.conan ...` to work without pre-installing conan
         if "PYTHONPATH" in self.env:
-            self.env["PYTHONPATH"] = f"{self.env['PYTHONPATH']}:{self._get_path_of_conan_installation()}"
+            self.env[
+                "PYTHONPATH"
+            ] = f"{self.env['PYTHONPATH']}:{self._get_path_of_conan_installation()}"
         else:
             self.env["PYTHONPATH"] = self._get_path_of_conan_installation()
         self._log(f"Temporarily changing PYTHONPATH to {self.env['PYTHONPATH']}")
         self._check_conan_version()
 
-    def _get_path_of_conan_installation(self):
+    def _get_path_of_conan_installation(self) -> str:
         import conan
-        return os.path.dirname(os.path.dirname(conan.__file__))
 
+        return ":".join(sys.path + [os.path.dirname(os.path.dirname(conan.__file__))])
 
     def _log(self, msg: str):
         print(f"[skbuild-conan] {msg}")

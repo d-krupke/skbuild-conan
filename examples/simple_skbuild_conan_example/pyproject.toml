@@ -3,7 +3,7 @@ requires = [
     "conan>=2.0.0",
     "setuptools",
     "scikit-build>=0.17.3",
-    "skbuild-conan",
+    "skbuild-conan@https://github.com/d-krupke/skbuild-conan",  # latest version for testing
     "cmake>=3.23",
     "ninja",
 ]

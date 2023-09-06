@@ -183,8 +183,10 @@ If you encounter problems with conan, you can try to delete the conan profile an
 ```sh
 rm ~/.conan2/profiles/skbuild_conan_py
 ```
+
 Maybe you can also just take a look at the file and see if conan detected your compiler correctly.
 A proper profile on Linux should for example look like this (different for other systems)):
+
 ```
 [settings]
 arch=x86_64
