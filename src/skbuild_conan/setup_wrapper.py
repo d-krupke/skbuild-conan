@@ -13,17 +13,19 @@ def setup(
     conan_profile_settings: typing.Optional[typing.Dict] = None,
     wrapped_setup: typing.Callable = skbuild.setup,
     cmake_args: typing.Optional[typing.List[str]] = None,
+    conan_profile: str = "skbuild_conan_py",
+    conan_env: typing.Dict[str, str] = {"CC": "", "CXX": ""},
     **kwargs,
 ):
     """
     An extended setup that takes care of conan dependencies.
 
     :param conanfile: Path to the folder with the conanfile.[py|txt]. By default the root
-                        is assumed. The conanfile can be used to define the dependencies.
-                        Alternatively, you can also use `conan_requirements` to define
-                        the conan dependencies without a conanfile. This option is
-                        exclusive. If you define `conan_requirements`, this option is
-                        ignored.
+        is assumed. The conanfile can be used to define the dependencies.
+        Alternatively, you can also use `conan_requirements` to define
+        the conan dependencies without a conanfile. This option is
+        exclusive. If you define `conan_requirements`, this option is
+        ignored.
     :param conan_recipes: List of paths to further conan recipes. The conan package index
         is far from perfect, so often you need to build your own recipes. You don't
         always want to upload those, so this argument gives you the option to integrate
@@ -40,6 +42,14 @@ def setup(
         tool.
     :param cmake_args: This is actually an argument of `skbuild` but we will extend it.
         It hands cmake custom arguments. We use it to tell cmake about the conan modules.
+    :param conan_profile: The name of the conan profile to use. By default, it is
+        `skbuild_conan_py`. This profile is created automatically and should work for
+        most cases. If you need to change it, you can do so by editing
+        `~/.conan2/profiles/skbuild_conan_py`.
+    :param conan_env: Environment variables that are used for the conan calls. By
+        default it will override `CC` and `CXX` with empty strings. This is necessary
+        to work around problems with anaconda, but it should not cause any problems
+        with other setups.
     :param kwargs: The arguments for the underlying `setup`. Please check the
         documentation of `skbuild` and `setuptools` for this.
     :return: The returned values of the wrapped setup.
@@ -58,6 +68,8 @@ def setup(
             output_folder=conan_output_folder,
             local_recipes=conan_recipes,
             settings=conan_profile_settings,
+            profile=conan_profile,
+            env=conan_env,
         )
         conan_helper.install(path=conanfile, requirements=conan_requirements)
         cmake_args = cmake_args if cmake_args else []
@@ -80,8 +92,15 @@ def setup(
         print(
             "5. Your system does not have a C++-compiler installed. Please install one."
         )
+        print(
+            "6. You conan profile is not configured correctly. "
+            + f"Please check `~/.conan2/profiles/{conan_profile}`. "
+            + "You can also try to just delete `./conan2/` to reset conan completely."
+        )
         raise e
-    print("[skbuild-conan] Setup of conan dependencies finished. cmake args:", cmake_args)
+    print(
+        "[skbuild-conan] Setup of conan dependencies finished. cmake args:", cmake_args
+    )
     print(
         "[skbuild-conan] See https://github.com/d-krupke/skbuild-conan if you encounter problems."
     )

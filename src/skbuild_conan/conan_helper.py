@@ -14,10 +14,21 @@ class ConanHelper:
     Dominik Krupke, TU Braunschweig, 2023
     """
 
-    def __init__(self, output_folder=".conan", local_recipes=None, settings=None):
+    def __init__(
+        self,
+        output_folder=".conan",
+        local_recipes=None,
+        settings=None,
+        profile: str = "default",
+        env: typing.Optional[typing.Dict] = None,
+    ):
         self.generator_folder = os.path.abspath(output_folder)
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
+        self.profile = profile
+        self.env = env if env else {}
+        if self.env:
+            self._log(f"Temporary overriding environment variables: {env}")
         self._check_conan_version()
 
     def _log(self, msg: str):
@@ -28,7 +39,7 @@ class ConanHelper:
         # color the command blue
         printable_cmd = f"\033[94m{printable_cmd}\033[0m"
         self._log(printable_cmd)
-        out = subprocess.check_output(cmd).decode()
+        out = subprocess.check_output(cmd, env=self.env).decode()
         return out
 
     def conan_version(self):
@@ -73,10 +84,8 @@ class ConanHelper:
                 "conans.conan",
                 "create",
                 path,
-                "-pr:b",
-                "default",
-                "-pr:h",
-                "default",
+                "-pr",
+                self.profile,
                 "-s",
                 "build_type=Release",
                 "--build=missing",
@@ -89,14 +98,11 @@ class ConanHelper:
         """
         self._log("Creating conan profile...")
         # check if profile exists or create a default one automatically.
-        if "default" in self._conan_to_json(["profile", "list", "-f", "json"]):
+        if self.profile in self._conan_to_json(["profile", "list", "-f", "json"]):
             self._log("Profile already exists.")
             return  # Profile already exists
-        cmd = ["-m", "conans.conan", "profile", "detect"]
-        try:
-            self._shell([sys.executable] + cmd)
-        except subprocess.CalledProcessError:
-            pass
+        cmd = ["-m", "conans.conan", "profile", "detect", "--name", self.profile]
+        self._shell([sys.executable] + cmd)
 
     def install(
         self, path: str = ".", requirements: typing.Optional[typing.List[str]] = None
@@ -123,6 +129,8 @@ class ConanHelper:
         cmd += [f"--output-folder={self.generator_folder}"]
         # Making sure  the right generators are used.
         cmd += ["-g", "CMakeDeps", "-g", "CMakeToolchain"]
+        # profile
+        cmd += ["-pr", self.profile]
         self._shell([sys.executable] + cmd)
 
     def cmake_args(self):

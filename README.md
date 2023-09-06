@@ -79,6 +79,14 @@ The added options are
   tool.
 - `cmake_args`: This is actually an argument of `skbuild` but we will extend it.
   It hands cmake custom arguments. We use it to tell cmake about the conan modules.
+- `conan_profile`: The name of the conan profile to use. By default, it is
+  `skbuild_conan_py`. This profile is created automatically and should work for
+  most cases. If you need to change it, you can do so by editing
+  `~/.conan2/profiles/skbuild_conan_py`.
+- `conan_env`: Environment variables that are used for the conan calls. By
+  default it will override `CC` and `CXX` with empty strings. This is necessary
+  to work around problems with anaconda, but it should not cause any problems
+  with other setups.
 
 An example usage could be as follows
 
