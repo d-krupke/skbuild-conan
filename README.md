@@ -176,6 +176,34 @@ conda install -c conda-forge cxx-compiler  # This should make sure that the comp
 Note that just the second command first may install an outdated g++ version (at least I observed that it installed gcc11 instead of gcc13, messing up my whole environment as this is too old).
 When compiling from source, you probably should delete the `_skbuild`-folder and do a proper uninstall of the previous installation first.
 
+### conan problems
+
+If you encounter problems with conan, you can try to delete the conan profile and let it be recreated.
+
+```sh
+rm ~/.conan2/profiles/skbuild_conan_py
+```
+Maybe you can also just take a look at the file and see if conan detected your compiler correctly.
+A proper profile on Linux should for example look like this (different for other systems)):
+```
+[settings]
+arch=x86_64
+build_type=Release
+compiler=gcc
+compiler.cppstd=gnu17
+compiler.libcxx=libstdc++11
+compiler.version=13
+os=Linux
+```
+
+If the problem persists, you can try to delete the conan cache.
+
+```sh
+rm -rf ~/.conan2/data
+```
+
+If you still encounter problems, please open an issue.
+
 ## Contribution
 
 We are happy about any contribution and also about reported issues.
