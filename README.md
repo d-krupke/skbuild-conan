@@ -185,7 +185,7 @@ rm ~/.conan2/profiles/skbuild_conan_py
 ```
 
 Maybe you can also just take a look at the file and see if conan detected your compiler correctly.
-A proper profile on Linux should for example look like this (different for other systems)):
+A proper profile on Linux should for example look like this (different for other systems):
 
 ```
 [settings]
@@ -214,6 +214,7 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.1.0_ conan is now called directly. This is kind of hacky, but circumvents problems with conan not being in the path if only installed for build.
 - _1.0.0_ Custom conan profile and workaround for anaconda problem.
 - _0.2.0_ Improved logging.
 - _0.1.4_ Fixing problem with paths that contain spaces. Switching back to manual versioning.
