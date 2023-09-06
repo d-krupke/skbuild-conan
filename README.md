@@ -199,7 +199,7 @@ os=Linux
 If the problem persists, you can try to delete the conan cache.
 
 ```sh
-rm -rf ~/.conan2/data
+rm -rf ~/.conan2
 ```
 
 If you still encounter problems, please open an issue.
