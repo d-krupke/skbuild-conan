@@ -3,6 +3,10 @@ import subprocess
 import sys
 import os
 import typing
+import io
+from contextlib import redirect_stdout
+
+
 
 
 class ConanHelper:
@@ -26,13 +30,22 @@ class ConanHelper:
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
         self.profile = profile
-        #self.env = os.environ.copy()
-        self.env = None
+        self.env = os.environ.copy()
         if env:
             self._log(f"Temporarily overriding environment variables: {env}")
-            #self.env.update(env)
-            self.env = env
+            self.env.update(env)
+        # fix to allow `python -m conans.conan ...` to work without pre-installing conan
+        if "PYTHONPATH" in self.env:
+            self.env["PYTHONPATH"] = f"{self.env['PYTHONPATH']}:{self._get_path_of_conan_installation()}"
+        else:
+            self.env["PYTHONPATH"] = self._get_path_of_conan_installation()
+        self._log(f"Temporarily changing PYTHONPATH to {self.env['PYTHONPATH']}")
         self._check_conan_version()
+
+    def _get_path_of_conan_installation(self):
+        import conan
+        return os.path.dirname(os.path.dirname(conan.__file__))
+
 
     def _log(self, msg: str):
         print(f"[skbuild-conan] {msg}")
