@@ -26,9 +26,10 @@ class ConanHelper:
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
         self.profile = profile
-        self.env = env if env else {}
-        if self.env:
+        self.env = os.environ.copy()
+        if env:
             self._log(f"Temporary overriding environment variables: {env}")
+            self.env.update(env)
         self._check_conan_version()
 
     def _log(self, msg: str):
@@ -39,7 +40,7 @@ class ConanHelper:
         # color the command blue
         printable_cmd = f"\033[94m{printable_cmd}\033[0m"
         self._log(printable_cmd)
-        out = subprocess.check_output(cmd, env=self.env).decode()
+        out = subprocess.check_output(cmd).decode()
         return out
 
     def conan_version(self):
