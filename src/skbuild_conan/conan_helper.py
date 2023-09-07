@@ -58,7 +58,7 @@ class ConanHelper:
         self.env = env
         env = env if env else {}
         self._default_profile_name = env.get("CONAN_DEFAULT_PROFILE",
-                                              os.environ.get("CONAN_DEFAULT_PROFILE", "default"))))
+                                              os.environ.get("CONAN_DEFAULT_PROFILE", "default"))
         if env:
             self._log(f"Temporarily overriding environment variables: {env}")
         self._check_conan_version()
