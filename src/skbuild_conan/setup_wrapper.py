@@ -49,7 +49,8 @@ def setup(
     :param conan_env: Environment variables that are used for the conan calls. By
         default it will override `CC` and `CXX` with empty strings. This is necessary
         to work around problems with anaconda, but it should not cause any problems
-        with other setups.
+        with other setups. You could define `CONAN_HOME` to `./conan/cache` to use
+        a local cache and not install anything to the user space.
     :param kwargs: The arguments for the underlying `setup`. Please check the
         documentation of `skbuild` and `setuptools` for this.
     :return: The returned values of the wrapped setup.
