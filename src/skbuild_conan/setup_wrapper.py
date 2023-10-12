@@ -1,7 +1,7 @@
 import sys
 import typing
 import skbuild
-
+import platform
 from .conan_helper import ConanHelper
 
 
@@ -57,12 +57,20 @@ def setup(
 
     # Workaround for mismatching ABI with GCC on Linux
     conan_profile_settings = conan_profile_settings if conan_profile_settings else {}
-    if sys.platform == "linux" and "compiler.libcxx" not in conan_profile_settings:
+    cmake_args = cmake_args if cmake_args else []
+    if platform.system( )== "Linux" and "compiler.libcxx" not in conan_profile_settings:
         print(
             '[skbuild-conan] Using workaround and setting "compiler.libcxx=libstdc++11"'
         )
         conan_profile_settings = conan_profile_settings.copy()
         conan_profile_settings["compiler.libcxx"] = "libstdc++11"
+    # Workaround for Windows and MSVC
+    if platform.system() == "Windows":
+        # Setting the policy to NEW means:
+        # CMAKE_MSVC_RUNTIME_LIBRARY is used to initialize the MSVC_RUNTIME_LIBRARY property on all targets.
+        # If CMAKE_MSVC_RUNTIME_LIBRARY is not set, CMake defaults to choosing a runtime library value consistent with the current build type.
+        print("[skbuild-conan] Using workaround for Windows and MSVC by enforcing policy CMP0091 to NEW")
+        cmake_args += ["-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
     try:
         conan_helper = ConanHelper(
             output_folder=conan_output_folder,
@@ -72,8 +80,8 @@ def setup(
             env=conan_env,
         )
         conan_helper.install(path=conanfile, requirements=conan_requirements)
-        cmake_args = cmake_args if cmake_args else []
         cmake_args += conan_helper.cmake_args()
+        
     except Exception as e:
         # Setup could not be completed. Give debugging information in red and abort.
         print(f"\033[91m[skbuild-conan] {e}\033[0m")

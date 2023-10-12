@@ -1,4 +1,4 @@
-name: Test expensive CGAL example on Windows
+name: Test example on Windows
 
 on: workflow_dispatch
 
@@ -28,7 +28,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: build and install
         run: |
-          python3 -m pip install examples/cgal_skbuild_conanio_example
+          pip install --verbose examples/simple_skbuild_conan_example
       - name: Test with pytest
         run: |
-          python3 -m pytest examples/cgal_skbuild_conanio_example/tests
+          pytest examples/simple_skbuild_conan_example/tests
