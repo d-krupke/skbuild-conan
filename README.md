@@ -86,7 +86,8 @@ The added options are
 - `conan_env`: Environment variables that are used for the conan calls. By
   default it will override `CC` and `CXX` with empty strings. This is necessary
   to work around problems with anaconda, but it should not cause any problems
-  with other setups.
+  with other setups. You could define `CONAN_HOME` to `./conan/cache` to use
+  a local cache and not install anything to the user space.
 
 An example usage could be as follows
 
@@ -96,7 +97,7 @@ from setuptools import find_packages
 
 setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     name="simple_skbuild_conan_example",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages("src"),  # Include all packages in `./src`.
     package_dir={"": "src"},  # The root for our python package is in `./src`.
     python_requires=">=3.7",  # lowest python version supported.
@@ -214,6 +215,7 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.1.1_ Fixing problem if the conan default profile has been renamed via environment variable.
 - _1.1.0_ conan is now called directly. This is kind of hacky, but circumvents problems with conan not being in the path if only installed for build.
 - _1.0.0_ Custom conan profile and workaround for anaconda problem.
 - _0.2.0_ Improved logging.

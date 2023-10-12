@@ -10,6 +10,9 @@ from conan.cli.cli import Cli as ConanCli
 from conan.api.conan_api import ConanAPI
 
 class EnvContextManager:
+    """
+    Context for temporary replacing environment variables.
+    """
 
     def __init__(self, env: typing.Optional[typing.Dict[str, str]]):
         self.env = env
@@ -53,6 +56,9 @@ class ConanHelper:
         self.settings = settings if settings else {}
         self.profile = profile
         self.env = env
+        env = env if env else {}
+        self._default_profile_name = env.get("CONAN_DEFAULT_PROFILE",
+                                              os.environ.get("CONAN_DEFAULT_PROFILE", "default"))
         if env:
             self._log(f"Temporarily overriding environment variables: {env}")
         self._check_conan_version()
@@ -136,9 +142,9 @@ class ConanHelper:
         self._log("Creating conan profile...")
         # check if profile exists or create a default one automatically.
         profile_list = self._conan_to_json(["profile", "list", "-f", "json"])
-        if "default" not in profile_list:
+        if self._default_profile_name not in profile_list:
             self._conan_cli(["profile", "detect"])
-            if self.profile == "default":
+            if self.profile == self._default_profile_name:
                 return  # default profile is already created
         if self.profile in profile_list:
             self._log("Profile already exists.")
