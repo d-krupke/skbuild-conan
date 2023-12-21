@@ -26,6 +26,12 @@ We (TU Braunschweig, Algorithms Group) are not affiliated with scikit-build or c
 
 ## Installation
 
+For `skbuild-conan` to work, you need to have a full Python and C++ development environment.
+This means that you need to have a compiler installed and the Python development files.
+The Python development files are usually called `python3-dev` or `python3-devel` and
+the compiler is usually called `gcc` or `clang`. On most Linux distributions, these
+are installed by default.
+
 You can simply add `"skbuild_conan",`
 to `requires=[...]` in `pyproject.toml`.
 E.g. The `pyproject.toml` could look like this
@@ -204,6 +210,21 @@ If the problem persists, you can try to delete the conan cache.
 ```sh
 rm -rf ~/.conan2
 ```
+
+### `fatal error: Python.h: No such file or directory`
+
+This is a rare problem with your Python installation. Make sure that you have the development files installed.
+
+```
+sudo apt-get install python3-dev  # Ubuntu
+sudo yum install python3-devel  # CentOS, RHEL
+sudo dnf install python3-devel  # Fedora
+sudo zypper in python3-devel  # OpenSUSE
+sudo apk add python3-dev  # Alpine
+sudo apk add python3-dev  # Cygwin
+```
+
+In case you have multiple Python versions installed, you may need to specify the Python version.
 
 If you still encounter problems, please open an issue.
 
