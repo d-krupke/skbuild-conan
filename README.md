@@ -228,6 +228,21 @@ In case you have multiple Python versions installed, you may need to specify the
 
 If you still encounter problems, please open an issue.
 
+### MetadataPathFinder.invalidate_caches() missing 1 required positional argument: 'cls'
+
+A very odd bug that we encountered with a distribution of Python 3.12 was the following:
+
+```
+...
+TypeError: MetadataPathFinder.invalidate_caches() missing 1 required positional argument: 'cls'
+
+ERROR: MetadataPathFinder.invalidate_caches() missing 1 required positional argument: 'cls'
+```
+
+The reason for this was surprisingly **a bug in the Python distribution of importlib itself**.
+Someone forgot to add the `@classmethod` to the `MetadataPathFinder`.
+Updating the Python distribution, in this case in conda via `conda update python` solved the problem.
+
 ## Contribution
 
 We are happy about any contribution and also about reported issues.
