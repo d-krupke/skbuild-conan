@@ -9,6 +9,7 @@ from contextlib import redirect_stdout
 from conan.cli.cli import Cli as ConanCli
 from conan.api.conan_api import ConanAPI
 
+
 class EnvContextManager:
     """
     Context for temporary replacing environment variables.
@@ -34,6 +35,7 @@ class EnvContextManager:
             else:
                 os.environ[key] = val
 
+
 class ConanHelper:
     """
     The ConanHelper is used for installing conan dependencies automatically
@@ -50,23 +52,27 @@ class ConanHelper:
         settings=None,
         profile: str = "default",
         env: typing.Optional[typing.Dict] = None,
+        build_type: str = "Release",
     ):
-        self.generator_folder = os.path.abspath(output_folder)
         self.local_recipes = local_recipes if local_recipes else []
         self.settings = settings if settings else {}
         self.profile = profile
         self.env = env
+        self.build_type = build_type
+        self.generator_folder = os.path.join(
+            os.path.abspath(output_folder), self.build_type.lower()
+        )
         env = env if env else {}
-        self._default_profile_name = env.get("CONAN_DEFAULT_PROFILE",
-                                              os.environ.get("CONAN_DEFAULT_PROFILE", "default"))
+        self._default_profile_name = env.get(
+            "CONAN_DEFAULT_PROFILE", os.environ.get("CONAN_DEFAULT_PROFILE", "default")
+        )
         if env:
             self._log(f"Temporarily overriding environment variables: {env}")
         self._check_conan_version()
 
-
     def _log(self, msg: str):
         print(f"[skbuild-conan] {msg}")
-    
+
     def _conan_cli(self, cmd: typing.List[str]) -> str:
         printable_cmd = " ".join(cmd)
         # color the command blue
@@ -130,7 +136,7 @@ class ConanHelper:
                 "-pr",
                 self.profile,
                 "-s",
-                "build_type=Release",
+                f"build_type={self.build_type}",
                 "--build=missing",
             ]
             self._conan_cli(cmd)
@@ -150,7 +156,7 @@ class ConanHelper:
             self._log("Profile already exists.")
             return  # Profile already exists
         cmd = ["profile", "detect", "--name", self.profile]
-        self._conan_cli( cmd)
+        self._conan_cli(cmd)
 
     def install(
         self, path: str = ".", requirements: typing.Optional[typing.List[str]] = None
@@ -161,7 +167,7 @@ class ConanHelper:
         self.create_profile()
         self.install_from_paths(self.local_recipes)
         self._log("Preparing conan dependencies for building package...")
-        cmd = [ "install"]
+        cmd = ["install"]
         if requirements:
             # requirements passed from Python directly
             for req in requirements:
@@ -179,7 +185,9 @@ class ConanHelper:
         cmd += ["-g", "CMakeDeps", "-g", "CMakeToolchain"]
         # profile
         cmd += ["-pr", self.profile]
-        self._conan_cli( cmd)
+        # build type
+        cmd += ["-s", f"build_type={self.build_type}"]
+        self._conan_cli(cmd)
 
     def cmake_args(self):
         """

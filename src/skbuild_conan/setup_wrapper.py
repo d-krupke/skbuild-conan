@@ -56,10 +56,12 @@ def setup(
     :return: The returned values of the wrapped setup.
     """
 
+    build_type = parse_args()
+
     # Workaround for mismatching ABI with GCC on Linux
     conan_profile_settings = conan_profile_settings if conan_profile_settings else {}
     cmake_args = cmake_args if cmake_args else []
-    if platform.system( )== "Linux" and "compiler.libcxx" not in conan_profile_settings:
+    if platform.system() == "Linux" and "compiler.libcxx" not in conan_profile_settings:
         print(
             '[skbuild-conan] Using workaround and setting "compiler.libcxx=libstdc++11"'
         )
@@ -70,7 +72,9 @@ def setup(
         # Setting the policy to NEW means:
         # CMAKE_MSVC_RUNTIME_LIBRARY is used to initialize the MSVC_RUNTIME_LIBRARY property on all targets.
         # If CMAKE_MSVC_RUNTIME_LIBRARY is not set, CMake defaults to choosing a runtime library value consistent with the current build type.
-        print("[skbuild-conan] Using workaround for Windows and MSVC by enforcing policy CMP0091 to NEW")
+        print(
+            "[skbuild-conan] Using workaround for Windows and MSVC by enforcing policy CMP0091 to NEW"
+        )
         cmake_args += ["-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
     try:
         conan_helper = ConanHelper(
@@ -79,10 +83,11 @@ def setup(
             settings=conan_profile_settings,
             profile=conan_profile,
             env=conan_env,
+            build_type=build_type,
         )
         conan_helper.install(path=conanfile, requirements=conan_requirements)
         cmake_args += conan_helper.cmake_args()
-        
+
     except Exception as e:
         # Setup could not be completed. Give debugging information in red and abort.
         print(f"\033[91m[skbuild-conan] {e}\033[0m")
@@ -115,3 +120,21 @@ def setup(
         "[skbuild-conan] See https://github.com/d-krupke/skbuild-conan if you encounter problems."
     )
     return wrapped_setup(cmake_args=cmake_args, **kwargs)
+
+
+def parse_args() -> str:
+    """This function parses the command-line arguments ``sys.argv`` and returns
+    build_type as a string. Release or Debug."""
+
+    import argparse
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--build-type",
+        default="Release",
+        choices=["Release", "Debug"],
+        help="specify the CMake build type (e.g. Debug or Release)",
+    )
+
+    args, _ = parser.parse_known_args()
+    return args.build_type
