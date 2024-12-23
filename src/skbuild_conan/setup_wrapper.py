@@ -90,28 +90,18 @@ def setup(
 
     except Exception as e:
         # Setup could not be completed. Give debugging information in red and abort.
-        print(f"\033[91m[skbuild-conan] {e}\033[0m")
-        print(
-            "\033[91m[skbuild-conan] skbuild_conan failed to install dependencies.\033[0m"
-        )
-        print("There are several reasons why this could happen:")
-        print(
-            "1. A mistake by the developer of the package you are trying to install."
-            + " Maybe a wrongly defined dependency?"
-        )
-        print("2. An unexpected conflict with an already existing conan configuration.")
-        print("3. A rare downtime of the conan package index.")
-        print(
-            "4. A bug in skbuild_conan. Please report it at https://github.com/d-krupke/skbuild-conan/issues"
-        )
-        print(
-            "5. Your system does not have a C++-compiler installed. Please install one."
-        )
-        print(
-            "6. You conan profile is not configured correctly. "
-            + f"Please check `~/.conan2/profiles/{conan_profile}`. "
-            + "You can also try to just delete `./conan2/` to reset conan completely."
-        )
+        error_message = f"""
+    \033[91m[skbuild-conan] {e}\033[0m
+    \033[91m[skbuild-conan] skbuild_conan failed to install dependencies.\033[0m
+    There are several reasons why this could happen:
+    1. A mistake by the developer of the package you are trying to install. Maybe a wrongly defined dependency?
+    2. An unexpected conflict with an already existing conan configuration.
+    3. A rare downtime of the conan package index.
+    4. A bug in skbuild_conan. Please report it at https://github.com/d-krupke/skbuild-conan/issues
+    5. Your system does not have a C++-compiler installed. Please install one.
+    6. Your conan profile is not configured correctly. Please check `~/.conan2/profiles/{conan_profile}`. You can also try to just delete `./conan2/` to reset conan completely.
+    """
+        print(error_message)
         raise e
     print(
         "[skbuild-conan] Setup of conan dependencies finished. cmake args:", cmake_args
@@ -123,8 +113,13 @@ def setup(
 
 
 def parse_args() -> str:
-    """This function parses the command-line arguments ``sys.argv`` and returns
-    build_type as a string. Release or Debug."""
+    """
+    This function parses the command-line arguments ``sys.argv`` and returns
+    build_type as a string. Release or Debug.
+
+    This is consistent with the interface of the underlying scikit-build, which
+    will also read this argument and change its behavior accordingly.
+    """
 
     import argparse
 

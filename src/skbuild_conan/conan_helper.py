@@ -8,6 +8,7 @@ from contextlib import redirect_stdout
 
 from conan.cli.cli import Cli as ConanCli
 from conan.api.conan_api import ConanAPI
+import conan
 
 
 class EnvContextManager:
@@ -94,9 +95,8 @@ class ConanHelper:
         return out
 
     def conan_version(self):
-        args = ["-v"]
-        version = self._conan_cli(args).split(" ")[-1]
-        return version
+        return conan.__version__
+
 
     def _check_conan_version(self):
         self._log("Checking Conan version...")

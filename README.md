@@ -251,6 +251,7 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.3.0_ The Debug/Release will propagate to the conan profile. (thanks to @xandox)
 - _1.2.0_ Workaround for Windows and MSVC found by Ramin Kosfeld (TU Braunschweig).
 - _1.1.1_ Fixing problem if the conan default profile has been renamed via environment variable.
 - _1.1.0_ conan is now called directly. This is kind of hacky, but circumvents problems with conan not being in the path if only installed for build.
