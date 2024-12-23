@@ -56,10 +56,12 @@ def setup(
     :return: The returned values of the wrapped setup.
     """
 
+    build_type = parse_args()
+
     # Workaround for mismatching ABI with GCC on Linux
     conan_profile_settings = conan_profile_settings if conan_profile_settings else {}
     cmake_args = cmake_args if cmake_args else []
-    if platform.system( )== "Linux" and "compiler.libcxx" not in conan_profile_settings:
+    if platform.system() == "Linux" and "compiler.libcxx" not in conan_profile_settings:
         print(
             '[skbuild-conan] Using workaround and setting "compiler.libcxx=libstdc++11"'
         )
@@ -70,7 +72,9 @@ def setup(
         # Setting the policy to NEW means:
         # CMAKE_MSVC_RUNTIME_LIBRARY is used to initialize the MSVC_RUNTIME_LIBRARY property on all targets.
         # If CMAKE_MSVC_RUNTIME_LIBRARY is not set, CMake defaults to choosing a runtime library value consistent with the current build type.
-        print("[skbuild-conan] Using workaround for Windows and MSVC by enforcing policy CMP0091 to NEW")
+        print(
+            "[skbuild-conan] Using workaround for Windows and MSVC by enforcing policy CMP0091 to NEW"
+        )
         cmake_args += ["-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
     try:
         conan_helper = ConanHelper(
@@ -79,34 +83,25 @@ def setup(
             settings=conan_profile_settings,
             profile=conan_profile,
             env=conan_env,
+            build_type=build_type,
         )
         conan_helper.install(path=conanfile, requirements=conan_requirements)
         cmake_args += conan_helper.cmake_args()
-        
+
     except Exception as e:
         # Setup could not be completed. Give debugging information in red and abort.
-        print(f"\033[91m[skbuild-conan] {e}\033[0m")
-        print(
-            "\033[91m[skbuild-conan] skbuild_conan failed to install dependencies.\033[0m"
-        )
-        print("There are several reasons why this could happen:")
-        print(
-            "1. A mistake by the developer of the package you are trying to install."
-            + " Maybe a wrongly defined dependency?"
-        )
-        print("2. An unexpected conflict with an already existing conan configuration.")
-        print("3. A rare downtime of the conan package index.")
-        print(
-            "4. A bug in skbuild_conan. Please report it at https://github.com/d-krupke/skbuild-conan/issues"
-        )
-        print(
-            "5. Your system does not have a C++-compiler installed. Please install one."
-        )
-        print(
-            "6. You conan profile is not configured correctly. "
-            + f"Please check `~/.conan2/profiles/{conan_profile}`. "
-            + "You can also try to just delete `./conan2/` to reset conan completely."
-        )
+        error_message = f"""
+    \033[91m[skbuild-conan] {e}\033[0m
+    \033[91m[skbuild-conan] skbuild_conan failed to install dependencies.\033[0m
+    There are several reasons why this could happen:
+    1. A mistake by the developer of the package you are trying to install. Maybe a wrongly defined dependency?
+    2. An unexpected conflict with an already existing conan configuration.
+    3. A rare downtime of the conan package index.
+    4. A bug in skbuild_conan. Please report it at https://github.com/d-krupke/skbuild-conan/issues
+    5. Your system does not have a C++-compiler installed. Please install one.
+    6. Your conan profile is not configured correctly. Please check `~/.conan2/profiles/{conan_profile}`. You can also try to just delete `./conan2/` to reset conan completely.
+    """
+        print(error_message)
         raise e
     print(
         "[skbuild-conan] Setup of conan dependencies finished. cmake args:", cmake_args
@@ -115,3 +110,26 @@ def setup(
         "[skbuild-conan] See https://github.com/d-krupke/skbuild-conan if you encounter problems."
     )
     return wrapped_setup(cmake_args=cmake_args, **kwargs)
+
+
+def parse_args() -> str:
+    """
+    This function parses the command-line arguments ``sys.argv`` and returns
+    build_type as a string. Release or Debug.
+
+    This is consistent with the interface of the underlying scikit-build, which
+    will also read this argument and change its behavior accordingly.
+    """
+
+    import argparse
+
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--build-type",
+        default="Release",
+        choices=["Release", "Debug"],
+        help="specify the CMake build type (e.g. Debug or Release)",
+    )
+
+    args, _ = parser.parse_known_args()
+    return args.build_type
