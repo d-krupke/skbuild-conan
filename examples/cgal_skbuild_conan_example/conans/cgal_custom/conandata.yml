@@ -20,3 +20,9 @@ sources:
   "5.6":
     sha256: 91346f0960b61e5aa4ddd15cfe5ee8780a4ecb93725c34c41d6d302e1646c9b8
     url: https://github.com/CGAL/cgal/releases/download/v5.6/CGAL-5.6-library.tar.xz
+  "6.0":
+    sha256: ed53a1498569a22341b482e579c6a3caf9ecbfb6e013f5a90ce780138073b520
+    url: https://github.com/CGAL/cgal/releases/download/v6.0/CGAL-6.0-library.tar.xz
+  "6.0.1":
+    sha256: c752737f91d1af71fa96038f0e37945ce82a5f1fffb6200172cfcdd77755a356
+    url: https://github.com/CGAL/cgal/releases/download/v6.0.1/CGAL-6.0.1-library.tar.xz

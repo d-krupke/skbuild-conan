@@ -34,9 +34,9 @@ find_package(fmt REQUIRED)
 include(FetchContent)
 FetchContent_Declare(
   pybind11
-  URL https://github.com/pybind/pybind11/archive/refs/tags/v2.9.2.tar.gz
+  URL https://github.com/pybind/pybind11/archive/refs/tags/v2.13.6.tar.gz
   URL_HASH
-    SHA256=6bd528c4dbe2276635dc787b6b1f2e5316cf6b49ee3e150264e455a0d68d19c1)
+    SHA256=e08cb87f4773da97fa7b5f035de8763abc656d87d5773e62f6da0587d1f0ec20)
 FetchContent_MakeAvailable(pybind11)
 # =====================================================
 

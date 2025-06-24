@@ -9,7 +9,7 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     python_requires=">=3.7",  # lowest python version supported.
     install_requires=[],  # Python Dependencies
     conan_recipes=["./conans/cgal_custom"],  # Conan Recipes
-    conan_requirements=["fmt/[>=10.0.0]", "cgal/[>=5.6]"],  # C++ Dependencies
+    conan_requirements=["fmt/[>=10.0.0]", "cgal/[>=6.0]"],  # C++ Dependencies
     cmake_minimum_required_version="3.23",
     conan_env={"CONAN_HOME": "./conan/cache"},
 )

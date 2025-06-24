@@ -31,7 +31,7 @@ class CgalConan(ConanFile):
     generators = "CMakeDeps", "CMakeToolchain"
     exports_sources = "CMakeLists.txt"
     short_paths = True
-    version = "5.6"
+    version = "6.0.1"
 
     _cmake = None
 
