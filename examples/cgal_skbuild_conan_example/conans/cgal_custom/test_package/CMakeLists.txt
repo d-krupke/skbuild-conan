@@ -5,7 +5,7 @@ find_package(Eigen3 REQUIRED)
 find_package(CGAL REQUIRED)
 add_executable(cgal_test test_package.cpp)
 target_link_libraries(cgal_test PUBLIC Eigen3::Eigen)
-target_link_libraries(cgal_test PUBLIC cgal::cgal)
+target_link_libraries(cgal_test PUBLIC CGAL::CGAL)
 set_property(TARGET cgal_test PROPERTY CXX_STANDARD 14)
 add_test(
   NAME run_cgal_test
