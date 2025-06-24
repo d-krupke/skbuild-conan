@@ -69,9 +69,10 @@ class CgalConan(ConanFile):
             )
 
     def requirements(self):
-        self.requires("boost/1.75.0")
-        self.requires("eigen/3.3.9")
-        self.requires("mpfr/4.1.0")
+        self.requires("boost/1.83.0")
+        self.requires("eigen/3.4.0")
+        self.requires("mpfr/4.2.1")
+        self.requires("gmp/6.3.0")
 
     def package_id(self):
         self.info.clear()

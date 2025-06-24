@@ -14,7 +14,7 @@ else()
 endif()
 
 target_link_libraries(cgal_test PRIVATE ${CGAL_TARGET})
-set_property(TARGET cgal_test PROPERTY CXX_STANDARD 14)
+set_property(TARGET cgal_test PROPERTY CXX_STANDARD 17)
 add_test(
   NAME run_cgal_test
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
