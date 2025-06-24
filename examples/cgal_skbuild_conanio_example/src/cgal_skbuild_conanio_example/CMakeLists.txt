@@ -1,6 +1,6 @@
 # Created by the script cgal_create_cmake_script This is the CMake script for
 # compiling a CGAL application.
-cpmaddpackage("gh:pybind/pybind11@2.10.0") # pybind11, essential
+cpmaddpackage("gh:pybind/pybind11@2.13.6") # pybind11, essential
 find_package(CGAL REQUIRED)
 find_package(fmt REQUIRED)
 
