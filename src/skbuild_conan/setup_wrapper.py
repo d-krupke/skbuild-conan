@@ -71,6 +71,42 @@ def validate_setup_args(
         raise ValidationError(error_msg)
 
 
+def _detect_verbosity_from_args() -> typing.Optional[LogLevel]:
+    """
+    Detect if --verbose or --quiet flags are present in command line args.
+
+    This allows skbuild-conan to honor pip install --verbose or setup.py --verbose
+    without requiring users to set SKBUILD_CONAN_LOG_LEVEL.
+
+    Returns:
+        LogLevel if detected from args, None otherwise (will use env var or default)
+    """
+    # Check for pip/setup.py verbosity flags
+    # pip uses --verbose/-v (can be repeated: -vv, -vvv)
+    # setup.py also uses --verbose
+    verbose_count = 0
+    quiet = False
+
+    for arg in sys.argv[1:]:
+        if arg in ('--verbose', '-v'):
+            verbose_count += 1
+        elif arg.startswith('-v'):
+            # Count multiple v's: -vv, -vvv
+            verbose_count += arg.count('v')
+        elif arg in ('--quiet', '-q'):
+            quiet = True
+
+    # Map verbosity to log levels
+    if quiet:
+        return LogLevel.QUIET
+    elif verbose_count >= 2:
+        return LogLevel.DEBUG  # -vv or more -> debug
+    elif verbose_count == 1:
+        return LogLevel.VERBOSE  # -v -> verbose
+
+    return None  # No flags detected, will use env var or default
+
+
 def setup(
     conanfile: str = ".",
     conan_recipes: typing.Optional[typing.List[str]] = None,
@@ -126,6 +162,12 @@ def setup(
         documentation of `skbuild` and `setuptools` for this.
     :return: The returned values of the wrapped setup.
     """
+
+    # Auto-detect verbosity from command-line args if not explicitly set
+    if conan_log_level is None:
+        detected_level = _detect_verbosity_from_args()
+        if detected_level is not None:
+            conan_log_level = detected_level
 
     logger = Logger(conan_log_level)
 

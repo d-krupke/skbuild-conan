@@ -55,7 +55,35 @@ by ` pip install skbuild_conan`.
 
 ## Transparency and Logging
 
-skbuild-conan provides comprehensive logging to help you understand what's happening during the build process. You can control the verbosity level using the `SKBUILD_CONAN_LOG_LEVEL` environment variable:
+skbuild-conan provides comprehensive logging to help you understand what's happening during the build process.
+
+### Using pip/setup.py verbosity flags (easiest)
+
+skbuild-conan automatically respects standard `--verbose` and `--quiet` flags:
+
+```bash
+# Standard output (default)
+pip install .
+
+# Verbose output (shows all operations and phases)
+pip install --verbose .
+
+# Very verbose output (includes full conan output)
+pip install -vv .
+
+# Quiet output (errors only)
+pip install --quiet .
+```
+
+The same works with `setup.py`:
+```bash
+python setup.py install --verbose
+python setup.py build -vv
+```
+
+### Using environment variable (for more control)
+
+You can also use the `SKBUILD_CONAN_LOG_LEVEL` environment variable:
 
 ```bash
 # Minimal output (errors only)
@@ -74,6 +102,8 @@ pip install .
 export SKBUILD_CONAN_LOG_LEVEL=debug
 pip install .
 ```
+
+**Note**: Environment variable takes precedence over command-line flags if both are set.
 
 After installation, a dependency report is generated at `.conan/<build_type>/dependency-report.txt` showing:
 - What dependencies were requested
@@ -287,6 +317,7 @@ of something, as we need to prioritize quite often.
 
 - _1.4.0_ (Upcoming) Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)
+  - **Auto-detect verbosity** from pip/setup.py --verbose/-v flags
   - **Dependency resolution reports** showing what was installed and why
   - **Context-aware error messages** with specific remediation suggestions
   - **Input validation** to catch configuration errors early
