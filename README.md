@@ -53,6 +53,40 @@ If you want to use for example `setup.py build`, you need to
 install `skbuild_conan` to your environment. You can do so
 by ` pip install skbuild_conan`.
 
+## Transparency and Logging
+
+skbuild-conan provides comprehensive logging to help you understand what's happening during the build process. You can control the verbosity level using the `SKBUILD_CONAN_LOG_LEVEL` environment variable:
+
+```bash
+# Minimal output (errors only)
+export SKBUILD_CONAN_LOG_LEVEL=quiet
+pip install .
+
+# Standard output (recommended)
+export SKBUILD_CONAN_LOG_LEVEL=normal  # This is the default
+pip install .
+
+# Detailed output (shows all operations)
+export SKBUILD_CONAN_LOG_LEVEL=verbose
+pip install .
+
+# Debug output (includes full conan output)
+export SKBUILD_CONAN_LOG_LEVEL=debug
+pip install .
+```
+
+After installation, a dependency report is generated at `.conan/<build_type>/dependency-report.txt` showing:
+- What dependencies were requested
+- What versions were resolved
+- Build configuration used
+- Local recipes installed
+
+This transparency helps with:
+- Understanding exactly what's being built
+- Debugging version conflicts
+- Security auditing
+- Reproducing builds
+
 ## Usage
 
 The usage is very similar to scitkit-build (and setuptools).
@@ -251,6 +285,15 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.4.0_ (Upcoming) Major transparency and usability improvements:
+  - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)
+  - **Dependency resolution reports** showing what was installed and why
+  - **Context-aware error messages** with specific remediation suggestions
+  - **Input validation** to catch configuration errors early
+  - **Automatic retry** for network operations with exponential backoff
+  - **Version compatibility checks** with warnings for known issues
+  - **Cross-platform color support** via colorama
+  - Deprecated pkg_resources replaced with importlib.metadata
 - _1.3.0_ The Debug/Release will propagate to the conan profile. (thanks to @xandox)
 - _1.2.0_ Workaround for Windows and MSVC found by Ramin Kosfeld (TU Braunschweig).
 - _1.1.1_ Fixing problem if the conan default profile has been renamed via environment variable.
