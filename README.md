@@ -307,11 +307,19 @@ The reason for this was surprisingly **a bug in the Python distribution of impor
 Someone forgot to add the `@classmethod` to the `MetadataPathFinder`.
 Updating the Python distribution, in this case in conda via `conda update python` solved the problem.
 
-## Contribution
+## Contributing
 
-We are happy about any contribution and also about reported issues.
-Sometimes it can take some time before we are able to take care
-of something, as we need to prioritize quite often.
+We welcome contributions from the community! Whether you're fixing a bug, adding a feature, or improving documentation, your help is appreciated.
+
+**Quick Start:**
+- 📖 Read [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines
+- 🔧 See [DEVELOPMENT.md](DEVELOPMENT.md) for technical development documentation
+- 🐛 Report bugs via [GitHub Issues](https://github.com/d-krupke/skbuild-conan/issues)
+- 💡 Suggest features via [GitHub Discussions](https://github.com/d-krupke/skbuild-conan/discussions)
+
+**Good First Issues:** Look for issues labeled [`good first issue`](https://github.com/d-krupke/skbuild-conan/labels/good%20first%20issue) to get started.
+
+Please note that response times may vary as we prioritize based on available time and resources.
 
 ## Changelog
 
