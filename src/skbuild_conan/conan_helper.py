@@ -20,7 +20,6 @@ from .exceptions import (
     ConanNetworkError,
     ConanRecipeError,
     ConanOutputError,
-    VersionCompatibilityError,
 )
 
 
@@ -52,7 +51,13 @@ def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
                         self.logger.error(
                             f"Network error after {max_attempts} attempts. Giving up."
                         )
-            raise last_exception
+            # This should never happen (last_exception should always be set if we reach here)
+            # but we check to be safe
+            if last_exception is not None:
+                raise last_exception
+            else:
+                # Shouldn't happen, but just in case
+                return func(self, *args, **kwargs)
         return wrapper
     return decorator
 
@@ -189,12 +194,21 @@ class ConanHelper:
             import skbuild
             if hasattr(skbuild, '__version__'):
                 skbuild_version = skbuild.__version__
-                # Basic check - should be 0.17.3+
-                if skbuild_version.startswith('0.1') and not skbuild_version.startswith('0.17'):
-                    self.logger.warning(
-                        f"scikit-build {skbuild_version} may be too old. "
-                        f"Recommended version is 0.17.3+"
-                    )
+                # Parse version and check if it's below 0.17.0
+                try:
+                    # Simple version comparison for major.minor
+                    version_parts = skbuild_version.split('.')
+                    major = int(version_parts[0])
+                    minor = int(version_parts[1]) if len(version_parts) > 1 else 0
+
+                    if major == 0 and minor < 17:
+                        self.logger.warning(
+                            f"scikit-build {skbuild_version} may be too old. "
+                            f"Recommended version is 0.17.3+"
+                        )
+                except (ValueError, IndexError):
+                    # If we can't parse, just skip the check
+                    self.logger.debug(f"Could not parse scikit-build version: {skbuild_version}")
         except Exception as e:
             self.logger.debug(f"Could not check scikit-build version: {e}")
 

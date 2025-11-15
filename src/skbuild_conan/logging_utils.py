@@ -95,10 +95,18 @@ class Logger:
         if self.log_level >= LogLevel.VERBOSE:
             print(f"{Fore.CYAN}[skbuild-conan] {msg}{Style.RESET_ALL}")
 
-    def debug(self, msg: str):
-        """Log a debug message (shown at DEBUG only)."""
+    def debug(self, msg: str, exc_info: bool = False):
+        """Log a debug message (shown at DEBUG only).
+
+        Args:
+            msg: The message to log
+            exc_info: If True, add exception information (for compatibility with logging)
+        """
         if self.log_level >= LogLevel.DEBUG:
             print(f"[skbuild-conan DEBUG] {msg}")
+            if exc_info:
+                import traceback
+                traceback.print_exc()
 
     def command(self, cmd: str):
         """Log a command being executed (shown at NORMAL and above)."""

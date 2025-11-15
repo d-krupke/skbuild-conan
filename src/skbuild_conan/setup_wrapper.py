@@ -1,7 +1,6 @@
 import sys
 import typing
 import os
-import re
 import skbuild
 import platform
 from .conan_helper import ConanHelper
@@ -209,7 +208,7 @@ def setup(
 
         # Generate dependency report for transparency
         report = conan_helper.generate_dependency_report(requirements=conan_requirements)
-        if conan_log_level and conan_log_level >= LogLevel.VERBOSE:
+        if conan_log_level is not None and conan_log_level >= LogLevel.VERBOSE:
             logger.info("\n" + report)
 
     except ConanVersionError as e:
