@@ -78,7 +78,7 @@ class Logger:
     def warning(self, msg: str):
         """Log a warning message (shown at NORMAL and above)."""
         if self.log_level >= LogLevel.NORMAL:
-            print(f"{Fore.YELLOW}[skbuild-conan WARN] {msg}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}[skbuild-conan WARN] {msg}{Style.RESET_ALL}", file=sys.stderr)
 
     def info(self, msg: str):
         """Log an info message (shown at NORMAL and above)."""

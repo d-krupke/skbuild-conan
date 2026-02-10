@@ -203,7 +203,7 @@ class TestConanHelperVersionCheck:
             )
 
         captured = capsys.readouterr()
-        assert "known issues" in captured.out.lower() or "upgrading" in captured.out.lower()
+        assert "known issues" in captured.err.lower() or "upgrading" in captured.err.lower()
 
 
 # ---------------------------------------------------------------------------

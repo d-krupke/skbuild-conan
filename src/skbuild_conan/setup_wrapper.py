@@ -36,11 +36,15 @@ def validate_setup_args(
     # Check conan_requirements format
     if conan_requirements:
         for req in conan_requirements:
-            # Basic validation - should be package/version format
-            if '/' not in req:
+            # Conan 2.x requirements must include a version: package/version
+            # Optionally with version ranges: package/[>=1.0]
+            # Optionally with user/channel: package/version@user/channel
+            if not req or '/' not in req:
                 errors.append(
                     f"Invalid requirement format: '{req}'. "
-                    f"Expected format: 'package/version' or 'package/[>=version]'"
+                    f"Expected format: 'package/version', 'package/[>=version]', "
+                    f"or 'package/version@user/channel'. "
+                    f"See https://docs.conan.io/2/reference/conanfile/methods/requirements.html"
                 )
 
     # Check paths exist
