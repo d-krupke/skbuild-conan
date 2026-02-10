@@ -323,7 +323,8 @@ Please note that response times may vary as we prioritize based on available tim
 
 ## Changelog
 
-- _1.4.0_ (Upcoming) Major transparency and usability improvements:
+- _1.5.0_ Support for conan's `cmake_layout` in conanfiles. Previously, using `[layout] cmake_layout` in a `conanfile.txt` (or `cmake_layout(self)` in `conanfile.py`) caused a "conan_toolchain.cmake not found" error because the generators are placed under `build/{BuildType}/generators/` instead of directly in the output folder. (#7)
+- _1.4.0_ Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)
   - **Auto-detect verbosity** from pip/setup.py --verbose/-v flags
   - **Dependency resolution reports** showing what was installed and why
