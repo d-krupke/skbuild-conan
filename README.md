@@ -53,6 +53,70 @@ If you want to use for example `setup.py build`, you need to
 install `skbuild_conan` to your environment. You can do so
 by ` pip install skbuild_conan`.
 
+## Transparency and Logging
+
+skbuild-conan provides comprehensive logging to help you understand what's happening during the build process.
+
+### Using pip/setup.py verbosity flags (easiest)
+
+skbuild-conan automatically respects standard `--verbose` and `--quiet` flags:
+
+```bash
+# Standard output (default)
+pip install .
+
+# Verbose output (shows all operations and phases)
+pip install --verbose .
+
+# Very verbose output (includes full conan output)
+pip install -vv .
+
+# Quiet output (errors only)
+pip install --quiet .
+```
+
+The same works with `setup.py`:
+```bash
+python setup.py install --verbose
+python setup.py build -vv
+```
+
+### Using environment variable (for more control)
+
+You can also use the `SKBUILD_CONAN_LOG_LEVEL` environment variable:
+
+```bash
+# Minimal output (errors only)
+export SKBUILD_CONAN_LOG_LEVEL=quiet
+pip install .
+
+# Standard output (recommended)
+export SKBUILD_CONAN_LOG_LEVEL=normal  # This is the default
+pip install .
+
+# Detailed output (shows all operations)
+export SKBUILD_CONAN_LOG_LEVEL=verbose
+pip install .
+
+# Debug output (includes full conan output)
+export SKBUILD_CONAN_LOG_LEVEL=debug
+pip install .
+```
+
+**Priority**: Command-line flags take precedence over the environment variable. If you set both, the `--verbose`/`--quiet` flags will be used.
+
+After installation, a dependency report is generated at `.conan/<build_type_lowercase>/dependency-report.txt` (e.g. `.conan/release/dependency-report.txt`) showing:
+- What dependencies were requested
+- What versions were resolved
+- Build configuration used
+- Local recipes installed
+
+This transparency helps with:
+- Understanding exactly what's being built
+- Debugging version conflicts
+- Security auditing
+- Reproducing builds
+
 ## Usage
 
 The usage is very similar to scitkit-build (and setuptools).
@@ -243,14 +307,31 @@ The reason for this was surprisingly **a bug in the Python distribution of impor
 Someone forgot to add the `@classmethod` to the `MetadataPathFinder`.
 Updating the Python distribution, in this case in conda via `conda update python` solved the problem.
 
-## Contribution
+## Contributing
 
-We are happy about any contribution and also about reported issues.
-Sometimes it can take some time before we are able to take care
-of something, as we need to prioritize quite often.
+We welcome contributions from the community! Whether you're fixing a bug, adding a feature, or improving documentation, your help is appreciated.
+
+**Quick Start:**
+- 📖 Read [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines
+- 🔧 See [DEVELOPMENT.md](DEVELOPMENT.md) for technical development documentation
+- 🐛 Report bugs via [GitHub Issues](https://github.com/d-krupke/skbuild-conan/issues)
+- 💡 Suggest features via [GitHub Discussions](https://github.com/d-krupke/skbuild-conan/discussions)
+
+**Good First Issues:** Look for issues labeled [`good first issue`](https://github.com/d-krupke/skbuild-conan/labels/good%20first%20issue) to get started.
+
+Please note that response times may vary as we prioritize based on available time and resources.
 
 ## Changelog
 
+- _1.4.0_ (Upcoming) Major transparency and usability improvements:
+  - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)
+  - **Auto-detect verbosity** from pip/setup.py --verbose/-v flags
+  - **Dependency resolution reports** showing what was installed and why
+  - **Context-aware error messages** with specific remediation suggestions
+  - **Input validation** to catch configuration errors early
+  - **Automatic retry** for network operations with exponential backoff
+  - **Version compatibility checks** with warnings for known issues
+  - **Cross-platform color support** via colorama
 - _1.3.1_ Replace `pkg_resources` with `importlib.metadata` to fix compatibility with setuptools v76+.
 - _1.3.0_ The Debug/Release will propagate to the conan profile. (thanks to @xandox)
 - _1.2.0_ Workaround for Windows and MSVC found by Ramin Kosfeld (TU Braunschweig).

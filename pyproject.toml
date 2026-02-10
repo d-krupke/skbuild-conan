@@ -7,7 +7,7 @@ where = ["src"]
 
 [project]
 name = "skbuild_conan"
-version = "v1.3.1"
+version = "v1.4.0"
 authors = [
     { name = "TU Braunschweig, IBR, Algorithms Group (Dominik Krupke)", email = "krupke@ibr.cs.tu-bs.de" },
 ]
@@ -25,7 +25,8 @@ dependencies = [
     "scikit-build>=0.17.3",
     "setuptools",
     "cmake>=3.23",
-    "ninja"
+    "ninja",
+    "colorama>=0.4.0"
 ]
 
 [project.urls]

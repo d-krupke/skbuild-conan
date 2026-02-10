@@ -3,6 +3,7 @@ An extension for scikit-build to add C++-dependencies as easily as Python depend
 via conan.
 """
 from .setup_wrapper import setup
+from .logging_utils import LogLevel
 
 # Add __version__ variable from package information.
 # https://packaging-guide.openastronomy.org/en/latest/minimal.html#my-package-init-py
@@ -13,4 +14,4 @@ try:
 except PackageNotFoundError:
     pass  # package is not installed
 
-__all = ["setup"]
+__all__ = ["setup", "LogLevel"]
