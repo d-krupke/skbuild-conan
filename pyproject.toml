@@ -7,7 +7,7 @@ where = ["src"]
 
 [project]
 name = "skbuild_conan"
-version = "v1.3.0"
+version = "v1.3.1"
 authors = [
     { name = "TU Braunschweig, IBR, Algorithms Group (Dominik Krupke)", email = "krupke@ibr.cs.tu-bs.de" },
 ]

@@ -251,6 +251,7 @@ of something, as we need to prioritize quite often.
 
 ## Changelog
 
+- _1.3.1_ Replace `pkg_resources` with `importlib.metadata` to fix compatibility with setuptools v76+.
 - _1.3.0_ The Debug/Release will propagate to the conan profile. (thanks to @xandox)
 - _1.2.0_ Workaround for Windows and MSVC found by Ramin Kosfeld (TU Braunschweig).
 - _1.1.1_ Fixing problem if the conan default profile has been renamed via environment variable.
