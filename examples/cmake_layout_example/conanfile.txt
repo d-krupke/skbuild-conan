@@ -1,0 +1,5 @@
+[requires]
+fmt/[>=10.0.0]
+
+[layout]
+cmake_layout

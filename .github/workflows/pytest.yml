@@ -33,9 +33,15 @@ jobs:
         run: |
           pip install -e .
           pytest tests/unit/ -v
-      - name: build and install
+      - name: Build and install simple example
         run: |
           pip install --verbose examples/simple_skbuild_conan_example
-      - name: Test with pytest
+      - name: Test simple example
         run: |
           pytest examples/simple_skbuild_conan_example/tests
+      - name: Build and install cmake_layout example
+        run: |
+          pip install --no-build-isolation --verbose examples/cmake_layout_example
+      - name: Test cmake_layout example
+        run: |
+          pytest examples/cmake_layout_example/tests
