@@ -167,4 +167,4 @@ examples/cgal_skbuild_conan_example/conans/cgal_custom/test_package/CMakeUserPre
 examples/cgal_skbuild_conan_example/CMakeUserPresets.json
 examples/simple_skbuild_conan_example/{self.generator_folder}/CMakePresets.json
 examples/cgal_skbuild_conanio_example/CMakeUserPresets.json
-examples/cgal_skbuild_conanio_example/CMakeUserPresets.json
+examples/cmake_layout_example/CMakeUserPresets.json

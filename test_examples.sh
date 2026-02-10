@@ -19,7 +19,7 @@ pip install -e "$SCRIPT_DIR"
 if [ $# -gt 0 ]; then
     examples=("$@")
 else
-    examples=(simple_skbuild_conan_example cgal_skbuild_conan_example cgal_skbuild_conanio_example)
+    examples=(simple_skbuild_conan_example cmake_layout_example cgal_skbuild_conan_example cgal_skbuild_conanio_example)
 fi
 
 for example in "${examples[@]}"; do

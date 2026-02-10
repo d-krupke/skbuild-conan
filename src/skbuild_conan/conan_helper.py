@@ -1,3 +1,4 @@
+import glob
 import json
 
 import sys
@@ -440,20 +441,54 @@ class ConanHelper:
 
         return report
 
+    def _find_toolchain(self) -> typing.Optional[str]:
+        """
+        Find conan_toolchain.cmake in the output folder.
+
+        Without a layout, conan places generators directly in the output folder.
+        With cmake_layout, they end up under build/{BuildType}/generators/.
+        We check known locations first, then fall back to a recursive search.
+        """
+        candidates = [
+            # Default (no layout): directly in the output folder
+            os.path.join(self.generator_folder, "conan_toolchain.cmake"),
+            # cmake_layout: build/{BuildType}/generators/
+            os.path.join(
+                self.generator_folder,
+                "build",
+                self.build_type,
+                "generators",
+                "conan_toolchain.cmake",
+            ),
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                return os.path.abspath(path)
+
+        # Fallback: recursive search for any layout we didn't anticipate
+        matches = glob.glob(
+            os.path.join(self.generator_folder, "**", "conan_toolchain.cmake"),
+            recursive=True,
+        )
+        if matches:
+            return os.path.abspath(matches[0])
+
+        return None
+
     def cmake_args(self):
         """
         Has to be appended to `cmake_args` in `setup(...)`.
         """
-        toolchain_path = os.path.abspath(
-            f"{self.generator_folder}/conan_toolchain.cmake"
-        )
-        if not os.path.exists(toolchain_path):
+        toolchain_path = self._find_toolchain()
+        if toolchain_path is None:
             raise RuntimeError(
                 "conan_toolchain.cmake not found. Make sure you"
                 " specified 'CMakeDeps' and 'CMakeToolchain' as"
                 " generators."
             )
+        generators_dir = os.path.dirname(toolchain_path)
+        self.logger.verbose(f"Found conan toolchain at: {toolchain_path}")
         return [
             f"-DCMAKE_TOOLCHAIN_FILE={toolchain_path}",
-            f"-DCMAKE_PREFIX_PATH={self.generator_folder}",
+            f"-DCMAKE_PREFIX_PATH={generators_dir}",
         ]

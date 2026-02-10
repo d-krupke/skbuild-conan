@@ -215,10 +215,10 @@ class TestConanHelperCmakeArgs:
     """Tests for cmake_args generation."""
 
     def test_returns_correct_paths(self, tmp_path):
-        """Test that cmake_args returns toolchain and prefix path."""
+        """Test that cmake_args returns toolchain and prefix path (flat layout)."""
         helper = _make_helper(tmp_path)
 
-        # Create the expected toolchain file
+        # Create the expected toolchain file (flat layout, no cmake_layout)
         release_dir = tmp_path / "conan_out" / "release"
         release_dir.mkdir(parents=True)
         (release_dir / "conan_toolchain.cmake").touch()
@@ -226,8 +226,55 @@ class TestConanHelperCmakeArgs:
         args = helper.cmake_args()
         assert len(args) == 2
         assert args[0].startswith("-DCMAKE_TOOLCHAIN_FILE=")
-        assert args[1].startswith("-DCMAKE_PREFIX_PATH=")
         assert "conan_toolchain.cmake" in args[0]
+        # PREFIX_PATH should point to the generator folder itself
+        assert args[1] == f"-DCMAKE_PREFIX_PATH={release_dir}"
+
+    def test_finds_toolchain_with_cmake_layout(self, tmp_path):
+        """Test that cmake_args finds toolchain under build/{BuildType}/generators/ (cmake_layout)."""
+        helper = _make_helper(tmp_path)
+
+        # cmake_layout places generators in build/{BuildType}/generators/
+        generators_dir = tmp_path / "conan_out" / "release" / "build" / "Release" / "generators"
+        generators_dir.mkdir(parents=True)
+        (generators_dir / "conan_toolchain.cmake").touch()
+
+        args = helper.cmake_args()
+        assert len(args) == 2
+        assert args[0].startswith("-DCMAKE_TOOLCHAIN_FILE=")
+        assert "conan_toolchain.cmake" in args[0]
+        # PREFIX_PATH should point to the generators directory, not the top-level folder
+        assert args[1] == f"-DCMAKE_PREFIX_PATH={generators_dir}"
+
+    def test_finds_toolchain_with_cmake_layout_debug(self, tmp_path):
+        """Test cmake_layout with Debug build type."""
+        helper = _make_helper(tmp_path, build_type="Debug")
+
+        generators_dir = tmp_path / "conan_out" / "debug" / "build" / "Debug" / "generators"
+        generators_dir.mkdir(parents=True)
+        (generators_dir / "conan_toolchain.cmake").touch()
+
+        args = helper.cmake_args()
+        assert len(args) == 2
+        assert "conan_toolchain.cmake" in args[0]
+        assert args[1] == f"-DCMAKE_PREFIX_PATH={generators_dir}"
+
+    def test_prefers_flat_layout_over_cmake_layout(self, tmp_path):
+        """Test that flat layout is preferred when both paths exist."""
+        helper = _make_helper(tmp_path)
+
+        # Create toolchain in both locations
+        release_dir = tmp_path / "conan_out" / "release"
+        release_dir.mkdir(parents=True)
+        (release_dir / "conan_toolchain.cmake").touch()
+
+        generators_dir = release_dir / "build" / "Release" / "generators"
+        generators_dir.mkdir(parents=True)
+        (generators_dir / "conan_toolchain.cmake").touch()
+
+        args = helper.cmake_args()
+        # Should find the flat-layout one first
+        assert args[1] == f"-DCMAKE_PREFIX_PATH={release_dir}"
 
     def test_raises_when_toolchain_missing(self, tmp_path):
         """Test that RuntimeError is raised when toolchain file is missing."""
