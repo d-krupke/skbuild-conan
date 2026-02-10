@@ -49,7 +49,7 @@ pip install -e examples/simple_skbuild_conan_example --verbose
 
 <!-- Mark completed items with an "x" -->
 
-- [ ] Code follows the project's style guidelines (black, flake8)
+- [ ] Code follows the project's style guidelines (ruff)
 - [ ] Self-review of code performed
 - [ ] Comments added in hard-to-understand areas
 - [ ] Documentation updated (README.md, docstrings, etc.)

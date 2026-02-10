@@ -70,7 +70,7 @@ def validate_setup_args(
         )
 
     if errors:
-        error_msg = "Invalid configuration:\n  - " + "\n  - ".join(errors)
+        error_msg = "\n  - " + "\n  - ".join(errors)
         raise ValidationError(error_msg)
 
 
@@ -119,7 +119,7 @@ def setup(
     wrapped_setup: typing.Callable = skbuild.setup,
     cmake_args: typing.Optional[typing.List[str]] = None,
     conan_profile: str = "skbuild_conan_py",
-    conan_env: typing.Dict[str, str] = {"CC": "", "CXX": ""},
+    conan_env: typing.Optional[typing.Dict[str, str]] = None,
     conan_log_level: typing.Optional[LogLevel] = None,
     **kwargs,
 ):
@@ -183,6 +183,10 @@ def setup(
 
     build_type = parse_args()
 
+    # Default conan_env to override CC/CXX (workaround for anaconda)
+    if conan_env is None:
+        conan_env = {"CC": "", "CXX": ""}
+
     # Workaround for mismatching ABI with GCC on Linux
     conan_profile_settings = conan_profile_settings if conan_profile_settings else {}
     cmake_args = cmake_args if cmake_args else []
@@ -212,7 +216,7 @@ def setup(
 
         # Generate dependency report for transparency
         report = conan_helper.generate_dependency_report(requirements=conan_requirements)
-        if conan_log_level is not None and conan_log_level >= LogLevel.VERBOSE:
+        if logger.log_level >= LogLevel.VERBOSE:
             logger.info("\n" + report)
 
     except ConanVersionError as e:

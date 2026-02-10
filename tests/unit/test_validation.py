@@ -4,9 +4,7 @@ Unit tests for input validation.
 These tests validate that setup arguments are properly validated
 before expensive conan operations are performed.
 """
-import os
 import pytest
-from pathlib import Path
 from skbuild_conan.setup_wrapper import validate_setup_args
 from skbuild_conan.exceptions import ValidationError
 

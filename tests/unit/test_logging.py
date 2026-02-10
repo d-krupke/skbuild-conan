@@ -4,8 +4,7 @@ Unit tests for logging_utils module.
 These tests validate the logging system including log levels,
 verbosity detection, and output formatting.
 """
-import os
-import pytest
+
 from skbuild_conan.logging_utils import Logger, LogLevel
 
 

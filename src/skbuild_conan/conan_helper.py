@@ -1,5 +1,5 @@
 import json
-import subprocess
+
 import sys
 import os
 import typing
@@ -41,7 +41,7 @@ def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
                 except ConanNetworkError as e:
                     last_exception = e
                     if attempt < max_attempts - 1:
-                        wait_time = backoff_base ** attempt
+                        wait_time = backoff_base * (2 ** attempt)
                         self.logger.warning(
                             f"Network error (attempt {attempt+1}/{max_attempts}). "
                             f"Retrying in {wait_time:.1f}s..."

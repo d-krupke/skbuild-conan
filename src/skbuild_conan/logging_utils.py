@@ -155,12 +155,12 @@ class Logger:
             for line in output.splitlines():
                 print(f"  {line}")
         elif self.log_level >= LogLevel.VERBOSE:
-            # In verbose mode, show summary
+            # In verbose mode, show full output when small, summary when large
             lines = output.splitlines()
-            if len(lines) > 10:
-                print(f"  ... ({len(lines)} lines of output)")
+            if len(lines) <= 10:
+                for line in lines:
+                    print(f"  {line}")
             else:
                 for line in lines[:5]:
                     print(f"  {line}")
-                if len(lines) > 5:
-                    print(f"  ... ({len(lines) - 5} more lines)")
+                print(f"  ... ({len(lines) - 5} more lines)")

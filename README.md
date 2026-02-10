@@ -105,7 +105,7 @@ pip install .
 
 **Priority**: Command-line flags take precedence over the environment variable. If you set both, the `--verbose`/`--quiet` flags will be used.
 
-After installation, a dependency report is generated at `.conan/<build_type>/dependency-report.txt` showing:
+After installation, a dependency report is generated at `.conan/<build_type_lowercase>/dependency-report.txt` (e.g. `.conan/release/dependency-report.txt`) showing:
 - What dependencies were requested
 - What versions were resolved
 - Build configuration used
