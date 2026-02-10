@@ -129,8 +129,9 @@ class TestLoggerOutput:
 
         captured = capsys.readouterr()
         assert "Error occurred" in captured.out
-        assert "test exception" in captured.out
-        assert "Traceback" in captured.out
+        # traceback.print_exc() writes to stderr
+        assert "test exception" in captured.err
+        assert "Traceback" in captured.err
 
 
 class TestLoggerPhases:

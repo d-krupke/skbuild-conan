@@ -30,7 +30,7 @@ for example in "${examples[@]}"; do
     fi
     echo ""
     echo "==> Building example: $example"
-    pip install --no-build-isolation "$example_dir"
+    pip install --no-build-isolation --verbose "$example_dir"
 done
 
 echo ""

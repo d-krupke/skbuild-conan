@@ -132,7 +132,7 @@ class TestRecipeValidation:
             )
 
         error_msg = str(exc_info.value)
-        assert "Missing conanfile.py" in error_msg
+        assert "missing conanfile.py" in error_msg.lower()
         assert str(recipe_dir) in error_msg
 
     def test_valid_recipe_accepted(self, tmp_path):

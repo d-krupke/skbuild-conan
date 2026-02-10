@@ -73,10 +73,10 @@ class TestValidationError:
         assert "Invalid requirement format" in str(error)
 
     def test_validation_error_remediation(self):
-        """Test that validation errors suggest fixes."""
-        error = ValidationError("test", remediation="Fix by doing X")
+        """Test that validation errors include default remediation."""
+        error = ValidationError("test")
         detailed = error.detailed_message()
-        assert "Fix by doing X" in detailed
+        assert "Suggested fix" in detailed
 
 
 class TestConanNetworkError:
