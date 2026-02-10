@@ -332,7 +332,7 @@ Please note that response times may vary as we prioritize based on available tim
   - **Automatic retry** for network operations with exponential backoff
   - **Version compatibility checks** with warnings for known issues
   - **Cross-platform color support** via colorama
-  - Deprecated pkg_resources replaced with importlib.metadata
+- _1.3.1_ Replace `pkg_resources` with `importlib.metadata` to fix compatibility with setuptools v76+.
 - _1.3.0_ The Debug/Release will propagate to the conan profile. (thanks to @xandox)
 - _1.2.0_ Workaround for Windows and MSVC found by Ramin Kosfeld (TU Braunschweig).
 - _1.1.1_ Fixing problem if the conan default profile has been renamed via environment variable.
