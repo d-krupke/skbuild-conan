@@ -1,0 +1,24 @@
+[build-system]
+requires = [
+    "conan>=2.0.0",
+    "setuptools",
+    "scikit-build>=0.17.3",
+    "skbuild-conan @ file:///home/esteban-dugueperoux/Documents/git/skbuild-conan/dist/skbuild_conan-1.6.0-py3-none-any.whl",
+    "cmake>=3.23",
+    "ninja",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swig_skbuild_conan_example"
+version = "0.0.1"
+authors = [
+  { name="Esteban DUGUEPEROUX", email="esteban.dugueperoux@gmail.com" },
+]
+description = "A small python package with a C++ extension built with conan"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
