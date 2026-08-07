@@ -124,7 +124,9 @@ for entry in "${IMAGES[@]}"; do
         docker_args+=(-v "skbuild-conan-cache-${label}:/conan")
     fi
 
-    out_log="$(mktemp)"
+    # Explicit template: portable across GNU and BSD mktemp, and gives the
+    # stray file a recognisable name if a run is interrupted before cleanup.
+    out_log="$(mktemp "${TMPDIR:-/tmp}/skbuild-conan-${label}.XXXXXX")"
     if docker run "${docker_args[@]}" "$tag" bash /in_container.sh 2>&1 | tee "$out_log"; then
         rc=0
     else
