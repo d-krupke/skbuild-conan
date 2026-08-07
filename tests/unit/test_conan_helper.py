@@ -461,6 +461,43 @@ class TestInstall:
         assert "install" in cmd
         assert "/my/project" in cmd
 
+    def test_install_settings_are_sorted(self, tmp_path):
+        """Settings are emitted in a stable order, independent of dict order."""
+        settings = {"compiler.libcxx": "libstdc++11", "compiler.cppstd": "20"}
+        helper = _make_helper(tmp_path, settings=settings)
+
+        with patch.object(helper, "create_profile"), \
+             patch.object(helper, "_conan_cli") as mock_cli:
+            helper.install(requirements=["fmt/10.0.0"])
+
+        cmd = mock_cli.call_args[0][0]
+        # cppstd sorts before libcxx, even though it was inserted second
+        assert cmd.index("compiler.cppstd=20") < cmd.index("compiler.libcxx=libstdc++11")
+
+    def test_build_type_in_settings_is_dropped(self, tmp_path, capsys):
+        """build_type belongs to --build-type, not to the profile settings.
+
+        Conan uses the last `-s` given for a key and `build_type` is always
+        appended last, so a value here was silently overridden. Drop it rather
+        than emit a command line that sets build_type twice.
+        """
+        helper = _make_helper(
+            tmp_path,
+            settings={"build_type": "Debug", "compiler.cppstd": "20"},
+            log_level=LogLevel.NORMAL,
+        )
+
+        assert "build_type" not in helper.settings
+        assert "build_type" in capsys.readouterr().err.lower()
+
+        with patch.object(helper, "create_profile"), \
+             patch.object(helper, "_conan_cli") as mock_cli:
+            helper.install(requirements=["fmt/10.0.0"])
+
+        cmd = mock_cli.call_args[0][0]
+        assert cmd.count("build_type=Release") == 1
+        assert "build_type=Debug" not in cmd
+
     def test_install_forwards_profile_settings(self, tmp_path):
         """Test that settings such as compiler.cppstd reach the install command."""
         helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})

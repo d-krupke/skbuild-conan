@@ -109,11 +109,24 @@ class ConanHelper:
         log_level: typing.Optional[LogLevel] = None,
     ):
         self.local_recipes = local_recipes if local_recipes else []
-        self.settings = settings if settings else {}
         self.profile = profile
         self.env = env
         self.build_type = build_type
         self.logger = Logger(log_level)
+        # Copy, so we never mutate the dict the caller handed us.
+        self.settings = dict(settings) if settings else {}
+        # `build_type` is not a profile setting here: it comes from the
+        # `--build-type` argument and is appended to every conan call
+        # explicitly. Conan uses the last `-s` given for a key, so a value in
+        # the settings would be silently overridden anyway. Drop it and say so,
+        # instead of emitting a command line that contradicts itself.
+        if "build_type" in self.settings:
+            ignored = self.settings.pop("build_type")
+            self.logger.warning(
+                f"Ignoring 'build_type={ignored}' from the conan profile settings. "
+                f"Use the '--build-type' argument instead "
+                f"(currently '{self.build_type}')."
+            )
         self.generator_folder = os.path.join(
             os.path.abspath(output_folder), self.build_type.lower()
         )
@@ -149,6 +162,19 @@ class ConanHelper:
         out = f.getvalue()
         self.logger.conan_output(out)
         return out
+
+    def _settings_args(self) -> typing.List[str]:
+        """
+        The profile settings as `-s key=value` arguments.
+
+        Sorted by key so that the emitted command is identical no matter in
+        which order the settings were written in `setup(...)`, which makes the
+        logged conan calls easy to compare between runs.
+        """
+        args = []
+        for key, val in sorted(self.settings.items()):
+            args += ["-s", f"{key}={val}"]
+        return args
 
     def conan_version(self):
         return conan.__version__
@@ -264,8 +290,7 @@ class ConanHelper:
                 # would be built with the profile defaults (e.g. the
                 # auto-detected `compiler.cppstd`) and the later `install` would
                 # have to build it a second time to match the requested settings.
-                for key, val in self.settings.items():
-                    cmd += ["-s", f"{key}={val}"]
+                cmd += self._settings_args()
                 cmd += [
                     "-s",
                     f"build_type={self.build_type}",
@@ -345,8 +370,7 @@ class ConanHelper:
             else:
                 # requirements from conanfile
                 cmd += [path]
-            for key, val in self.settings.items():
-                cmd += ["-s", f"{key}={val}"]
+            cmd += self._settings_args()
             cmd += ["--build=missing"]
             # redirecting the output to a subfolder. The `cmake_args` makes sure
             # that CMake still finds it.
