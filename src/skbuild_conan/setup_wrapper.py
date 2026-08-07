@@ -1,24 +1,28 @@
+from __future__ import annotations
+
+import os
+import platform
 import sys
 import typing
-import os
+
 import skbuild
-import platform
+
 from .conan_helper import ConanHelper
-from .logging_utils import Logger, LogLevel
 from .exceptions import (
-    SkbuildConanError,
-    ConanVersionError,
-    ConanProfileError,
     ConanDependencyError,
     ConanNetworkError,
+    ConanProfileError,
+    ConanVersionError,
+    SkbuildConanError,
     ValidationError,
 )
+from .logging_utils import Logger, LogLevel
 
 
 def validate_setup_args(
     conanfile: str,
-    conan_recipes: typing.Optional[typing.List[str]],
-    conan_requirements: typing.Optional[typing.List[str]],
+    conan_recipes: list[str] | None,
+    conan_requirements: list[str] | None,
 ) -> None:
     """
     Validate setup arguments before running expensive operations.
@@ -39,7 +43,7 @@ def validate_setup_args(
             # Conan 2.x requirements must include a version: package/version
             # Optionally with version ranges: package/[>=1.0]
             # Optionally with user/channel: package/version@user/channel
-            if not req or '/' not in req:
+            if not req or "/" not in req:
                 errors.append(
                     f"Invalid requirement format: '{req}'. "
                     f"Expected format: 'package/version', 'package/[>=version]', "
@@ -48,7 +52,7 @@ def validate_setup_args(
                 )
 
     # Check paths exist
-    if conanfile != '.' and not os.path.exists(conanfile):
+    if conanfile != "." and not os.path.exists(conanfile):
         errors.append(f"Conanfile path does not exist: {conanfile}")
 
     if conan_recipes:
@@ -56,14 +60,12 @@ def validate_setup_args(
             if not os.path.exists(recipe):
                 errors.append(f"Recipe path does not exist: {recipe}")
             else:
-                conanfile_path = os.path.join(recipe, 'conanfile.py')
+                conanfile_path = os.path.join(recipe, "conanfile.py")
                 if not os.path.exists(conanfile_path):
-                    errors.append(
-                        f"Recipe path missing conanfile.py: {recipe}"
-                    )
+                    errors.append(f"Recipe path missing conanfile.py: {recipe}")
 
     # Check mutually exclusive options
-    if conan_requirements and conanfile != '.':
+    if conan_requirements and conanfile != ".":
         errors.append(
             "Cannot specify both conan_requirements and conanfile. "
             "Use conan_requirements for simple cases or conanfile for complex setups."
@@ -74,7 +76,7 @@ def validate_setup_args(
         raise ValidationError(error_msg)
 
 
-def _detect_verbosity_from_args() -> typing.Optional[LogLevel]:
+def _detect_verbosity_from_args() -> LogLevel | None:
     """
     Detect if --verbose or --quiet flags are present in command line args.
 
@@ -91,20 +93,20 @@ def _detect_verbosity_from_args() -> typing.Optional[LogLevel]:
     quiet = False
 
     for arg in sys.argv[1:]:
-        if arg in ('--verbose', '-v'):
+        if arg in ("--verbose", "-v"):
             verbose_count += 1
-        elif arg.startswith('-v'):
+        elif arg.startswith("-v"):
             # Count multiple v's: -vv, -vvv
-            verbose_count += arg.count('v')
-        elif arg in ('--quiet', '-q'):
+            verbose_count += arg.count("v")
+        elif arg in ("--quiet", "-q"):
             quiet = True
 
     # Map verbosity to log levels
     if quiet:
         return LogLevel.QUIET
-    elif verbose_count >= 2:
+    if verbose_count >= 2:
         return LogLevel.DEBUG  # -vv or more -> debug
-    elif verbose_count == 1:
+    if verbose_count == 1:
         return LogLevel.VERBOSE  # -v -> verbose
 
     return None  # No flags detected, will use env var or default
@@ -112,15 +114,15 @@ def _detect_verbosity_from_args() -> typing.Optional[LogLevel]:
 
 def setup(
     conanfile: str = ".",
-    conan_recipes: typing.Optional[typing.List[str]] = None,
-    conan_requirements: typing.Optional[typing.List[str]] = None,
+    conan_recipes: list[str] | None = None,
+    conan_requirements: list[str] | None = None,
     conan_output_folder=".conan",
-    conan_profile_settings: typing.Optional[typing.Dict] = None,
+    conan_profile_settings: dict | None = None,
     wrapped_setup: typing.Callable = skbuild.setup,
-    cmake_args: typing.Optional[typing.List[str]] = None,
+    cmake_args: list[str] | None = None,
     conan_profile: str = "skbuild_conan_py",
-    conan_env: typing.Optional[typing.Dict[str, str]] = None,
-    conan_log_level: typing.Optional[LogLevel] = None,
+    conan_env: dict[str, str] | None = None,
+    conan_log_level: LogLevel | None = None,
     **kwargs,
 ):
     """
@@ -228,7 +230,9 @@ def setup(
         cmake_args += conan_helper.cmake_args()
 
         # Generate dependency report for transparency
-        report = conan_helper.generate_dependency_report(requirements=conan_requirements)
+        report = conan_helper.generate_dependency_report(
+            requirements=conan_requirements
+        )
         if logger.log_level >= LogLevel.VERBOSE:
             logger.info("\n" + report)
 
@@ -257,7 +261,7 @@ def setup(
         logger.error(f"\nUnexpected error during setup: {e}")
         logger.error("\nThis is likely a bug. Please report it at:")
         logger.error("https://github.com/d-krupke/skbuild-conan/issues")
-        logger.debug(f"\nFull error details:", exc_info=True)
+        logger.debug("\nFull error details:", exc_info=True)
         raise
 
     logger.success("Conan dependencies setup completed successfully")

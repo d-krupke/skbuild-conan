@@ -1,27 +1,27 @@
-import glob
-import json
+from __future__ import annotations
 
-import sys
-import os
-import typing
+import glob
 import io
+import json
+import os
+import sys
 import time
 from contextlib import redirect_stdout
 from functools import wraps
 
-from conan.cli.cli import Cli as ConanCli
-from conan.api.conan_api import ConanAPI
 import conan
+from conan.api.conan_api import ConanAPI
+from conan.cli.cli import Cli as ConanCli
 
-from .logging_utils import Logger, LogLevel
 from .exceptions import (
-    ConanVersionError,
-    ConanProfileError,
     ConanDependencyError,
     ConanNetworkError,
-    ConanRecipeError,
     ConanOutputError,
+    ConanProfileError,
+    ConanRecipeError,
+    ConanVersionError,
 )
+from .logging_utils import Logger, LogLevel
 
 
 def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
@@ -32,6 +32,7 @@ def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
         max_attempts: Maximum number of retry attempts
         backoff_base: Base for exponential backoff (seconds)
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -42,9 +43,9 @@ def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
                 except ConanNetworkError as e:
                     last_exception = e
                     if attempt < max_attempts - 1:
-                        wait_time = backoff_base * (2 ** attempt)
+                        wait_time = backoff_base * (2**attempt)
                         self.logger.warning(
-                            f"Network error (attempt {attempt+1}/{max_attempts}). "
+                            f"Network error (attempt {attempt + 1}/{max_attempts}). "
                             f"Retrying in {wait_time:.1f}s..."
                         )
                         time.sleep(wait_time)
@@ -56,10 +57,11 @@ def retry_on_network_error(max_attempts: int = 3, backoff_base: float = 2.0):
             # but we check to be safe
             if last_exception is not None:
                 raise last_exception
-            else:
-                # Shouldn't happen, but just in case
-                return func(self, *args, **kwargs)
+            # Shouldn't happen, but just in case
+            return func(self, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -68,7 +70,7 @@ class EnvContextManager:
     Context for temporary replacing environment variables.
     """
 
-    def __init__(self, env: typing.Optional[typing.Dict[str, str]]):
+    def __init__(self, env: dict[str, str] | None):
         self.env = env
         self.old_env = {}
 
@@ -104,9 +106,9 @@ class ConanHelper:
         local_recipes=None,
         settings=None,
         profile: str = "default",
-        env: typing.Optional[typing.Dict] = None,
+        env: dict | None = None,
         build_type: str = "Release",
-        log_level: typing.Optional[LogLevel] = None,
+        log_level: LogLevel | None = None,
     ):
         self.local_recipes = local_recipes if local_recipes else []
         self.profile = profile
@@ -142,8 +144,8 @@ class ConanHelper:
 
     @staticmethod
     def _normalize_env(
-        env: typing.Optional[typing.Dict],
-    ) -> typing.Dict[str, str]:
+        env: dict | None,
+    ) -> dict[str, str]:
         """
         The environment overrides, with a relative `CONAN_HOME` made absolute.
 
@@ -166,33 +168,32 @@ class ConanHelper:
         return env
 
     @retry_on_network_error(max_attempts=3, backoff_base=2.0)
-    def _conan_cli(self, cmd: typing.List[str]) -> str:
+    def _conan_cli(self, cmd: list[str]) -> str:
         printable_cmd = " ".join(cmd)
         self.logger.command(f"conan {printable_cmd}")
 
         f = io.StringIO()
-        with redirect_stdout(f):
-            # `ConanAPI()` resolves the cache location (`CONAN_HOME`) and loads
-            # the configuration *at construction time*, so it has to be built
-            # inside the override, not before it. Constructing it outside meant
-            # `conan_env={"CONAN_HOME": ...}` silently had no effect.
-            with EnvContextManager(self.env):
-                conan_cli = ConanCli(ConanAPI())
-                try:
-                    conan_cli.run(cmd)
-                except BaseException as e:
-                    out = f.getvalue()
-                    self.logger.conan_output(out)
-                    # Check if it's a network error
-                    if "ConnectionError" in str(e) or "URLError" in str(e):
-                        raise ConanNetworkError(str(e)) from e
-                    # Re-raise as-is for now (will be caught by caller)
-                    raise
+        # `ConanAPI()` resolves the cache location (`CONAN_HOME`) and loads the
+        # configuration *at construction time*, so it has to be built inside the
+        # environment override, not before it. Constructing it outside meant
+        # `conan_env={"CONAN_HOME": ...}` silently had no effect.
+        with redirect_stdout(f), EnvContextManager(self.env):
+            conan_cli = ConanCli(ConanAPI())
+            try:
+                conan_cli.run(cmd)
+            except BaseException as e:
+                out = f.getvalue()
+                self.logger.conan_output(out)
+                # Check if it's a network error
+                if "ConnectionError" in str(e) or "URLError" in str(e):
+                    raise ConanNetworkError(str(e)) from e
+                # Re-raise as-is for now (will be caught by caller)
+                raise
         out = f.getvalue()
         self.logger.conan_output(out)
         return out
 
-    def _settings_args(self) -> typing.List[str]:
+    def _settings_args(self) -> list[str]:
         """
         The profile settings as `-s key=value` arguments.
 
@@ -208,7 +209,6 @@ class ConanHelper:
     def conan_version(self):
         return conan.__version__
 
-
     def _check_conan_version(self):
         self.logger.verbose("Checking Conan version...")
         version = self.conan_version()
@@ -217,10 +217,10 @@ class ConanHelper:
 
         # Parse version for more detailed checks
         try:
-            version_parts = version.split('.')
+            version_parts = version.split(".")
             major = int(version_parts[0])
             minor = int(version_parts[1]) if len(version_parts) > 1 else 0
-            patch = int(version_parts[2].split('-')[0]) if len(version_parts) > 2 else 0
+            patch = int(version_parts[2].split("-")[0]) if len(version_parts) > 2 else 0
 
             # Warn about old Conan 2.x versions
             if major == 2 and minor == 0 and patch < 14:
@@ -248,12 +248,13 @@ class ConanHelper:
         # Check scikit-build version if we can
         try:
             import skbuild
-            if hasattr(skbuild, '__version__'):
+
+            if hasattr(skbuild, "__version__"):
                 skbuild_version = skbuild.__version__
                 # Parse version and check if it's below 0.17.0
                 try:
                     # Simple version comparison for major.minor
-                    version_parts = skbuild_version.split('.')
+                    version_parts = skbuild_version.split(".")
                     major = int(version_parts[0])
                     minor = int(version_parts[1]) if len(version_parts) > 1 else 0
 
@@ -264,8 +265,10 @@ class ConanHelper:
                         )
                 except (ValueError, IndexError):
                     # If we can't parse, just skip the check
-                    self.logger.debug(f"Could not parse scikit-build version: {skbuild_version}")
-        except Exception as e:
+                    self.logger.debug(
+                        f"Could not parse scikit-build version: {skbuild_version}"
+                    )
+        except Exception as e:  # noqa: BLE001 - advisory check, never fail the build
             self.logger.debug(f"Could not check scikit-build version: {e}")
 
         if issues:
@@ -273,7 +276,7 @@ class ConanHelper:
             for issue in issues:
                 self.logger.warning(issue)
 
-    def _conan_to_json(self, args: typing.List[str]):
+    def _conan_to_json(self, args: list[str]):
         """
         Runs conan with the args and parses the output as json.
         """
@@ -288,7 +291,7 @@ class ConanHelper:
                 f"Output: {output[:200]}..."
             ) from e
 
-    def install_from_paths(self, paths: typing.List[str]):
+    def install_from_paths(self, paths: list[str]):
         """
         Exports the local recipes into the conan cache and builds them.
 
@@ -334,7 +337,9 @@ class ConanHelper:
                 self._conan_cli(cmd)
                 self.logger.success(f"Successfully installed {package_id}")
             except Exception as e:
-                if not isinstance(e, (ConanRecipeError, ConanNetworkError, ConanOutputError)):
+                if not isinstance(
+                    e, (ConanRecipeError, ConanNetworkError, ConanOutputError)
+                ):
                     raise ConanRecipeError(path, str(e)) from e
                 raise
 
@@ -347,7 +352,9 @@ class ConanHelper:
         try:
             profile_list = self._conan_to_json(["profile", "list", "-f", "json"])
             if self._default_profile_name not in profile_list:
-                self.logger.info(f"Creating default profile '{self._default_profile_name}'...")
+                self.logger.info(
+                    f"Creating default profile '{self._default_profile_name}'..."
+                )
                 self._conan_cli(["profile", "detect"])
                 if self.profile == self._default_profile_name:
                     return  # default profile is already created
@@ -360,13 +367,13 @@ class ConanHelper:
             self._conan_cli(cmd)
             self.logger.success(f"Profile '{self.profile}' created successfully")
         except Exception as e:
-            if not isinstance(e, (ConanProfileError, ConanNetworkError, ConanOutputError)):
+            if not isinstance(
+                e, (ConanProfileError, ConanNetworkError, ConanOutputError)
+            ):
                 raise ConanProfileError(self.profile, str(e)) from e
             raise
 
-    def install(
-        self, path: str = ".", requirements: typing.Optional[typing.List[str]] = None
-    ):
+    def install(self, path: str = ".", requirements: list[str] | None = None):
         """
         Running conan to get C++ dependencies
         """
@@ -421,11 +428,13 @@ class ConanHelper:
             self.logger.exit_phase(success=True)
         except Exception as e:
             self.logger.exit_phase(success=False)
-            if not isinstance(e, (ConanDependencyError, ConanNetworkError, ConanOutputError)):
+            if not isinstance(
+                e, (ConanDependencyError, ConanNetworkError, ConanOutputError)
+            ):
                 raise ConanDependencyError(str(e)) from e
             raise
 
-    def generate_dependency_report(self, requirements: typing.Optional[typing.List[str]] = None) -> str:
+    def generate_dependency_report(self, requirements: list[str] | None = None) -> str:
         """
         Generate a dependency resolution report for transparency.
 
@@ -438,7 +447,9 @@ class ConanHelper:
         lines.append("=" * 60)
         lines.append("Dependency Resolution Report")
         lines.append("=" * 60)
-        lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        # Local time: this report is read by a human on the machine that built.
+        now = datetime.now().astimezone()
+        lines.append(f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         lines.append("")
 
         # Build configuration
@@ -447,7 +458,7 @@ class ConanHelper:
         lines.append(f"  Build Type: {self.build_type}")
         lines.append(f"  Output Folder: {self.generator_folder}")
         if self.settings:
-            lines.append(f"  Custom Settings:")
+            lines.append("  Custom Settings:")
             for key, val in self.settings.items():
                 lines.append(f"    {key}={val}")
         lines.append("")
@@ -472,16 +483,18 @@ class ConanHelper:
         try:
             graph_info_path = os.path.join(self.generator_folder, "graph_info.json")
             if os.path.exists(graph_info_path):
-                with open(graph_info_path, 'r') as f:
+                with open(graph_info_path) as f:
                     graph_info = json.load(f)
                 lines.append("Resolved Packages:")
                 # Parse graph_info to show packages (structure varies by conan version)
                 if "graph" in graph_info:
-                    lines.append("  (See graph_info.json for detailed dependency graph)")
+                    lines.append(
+                        "  (See graph_info.json for detailed dependency graph)"
+                    )
             else:
                 lines.append("Resolved Packages:")
                 lines.append("  (Detailed graph information not available)")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - report is diagnostic, not critical
             self.logger.debug(f"Could not read graph info: {e}")
             lines.append("Resolved Packages:")
             lines.append("  (Could not read dependency graph)")
@@ -495,15 +508,15 @@ class ConanHelper:
         report_path = os.path.join(self.generator_folder, "dependency-report.txt")
         try:
             os.makedirs(os.path.dirname(report_path), exist_ok=True)
-            with open(report_path, 'w') as f:
+            with open(report_path, "w") as f:
                 f.write(report)
             self.logger.verbose(f"Dependency report written to: {report_path}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - report is diagnostic, not critical
             self.logger.debug(f"Could not write dependency report: {e}")
 
         return report
 
-    def _find_toolchain(self) -> typing.Optional[str]:
+    def _find_toolchain(self) -> str | None:
         """
         Find conan_toolchain.cmake in the output folder.
 

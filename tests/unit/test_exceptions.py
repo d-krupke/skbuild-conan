@@ -4,17 +4,19 @@ Unit tests for custom exceptions.
 These tests validate that custom exceptions have proper inheritance,
 remediation messages, and formatting.
 """
+
 import pytest
+
 from skbuild_conan.exceptions import (
-    SkbuildConanError,
-    ConanVersionError,
-    ConanProfileError,
     ConanDependencyError,
     ConanNetworkError,
+    ConanOutputError,
+    ConanProfileError,
     ConanRecipeError,
+    ConanVersionError,
+    SkbuildConanError,
     ValidationError,
     VersionCompatibilityError,
-    ConanOutputError,
 )
 
 
@@ -88,7 +90,11 @@ class TestConanNetworkError:
         detailed = error.detailed_message()
         # Should suggest it's transient and to try again
         lower_detailed = detailed.lower()
-        assert "transient" in lower_detailed or "again" in lower_detailed or "retry" in lower_detailed
+        assert (
+            "transient" in lower_detailed
+            or "again" in lower_detailed
+            or "retry" in lower_detailed
+        )
 
 
 class TestConanRecipeError:
@@ -123,13 +129,16 @@ class TestExceptionUsability:
         """Test that exception chaining works."""
         original = ValueError("original error")
 
-        try:
+        def raise_chained():
             try:
                 raise original
             except ValueError as e:
                 raise ConanDependencyError("dependency failed") from e
-        except ConanDependencyError as e:
-            assert e.__cause__ is original
+
+        with pytest.raises(ConanDependencyError) as exc_info:
+            raise_chained()
+
+        assert exc_info.value.__cause__ is original
 
     def test_detailed_message_includes_separators(self):
         """Test that detailed messages are visually separated."""

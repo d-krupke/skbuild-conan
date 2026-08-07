@@ -1,4 +1,4 @@
-from cgal_skbuild_conanio_example import FieldNumber, Point, Polygon, PolygonWithHoles
+from cgal_skbuild_conanio_example import FieldNumber
 
 
 def test_field_number():

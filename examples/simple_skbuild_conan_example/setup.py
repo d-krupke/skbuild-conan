@@ -1,5 +1,6 @@
-from skbuild_conan import setup
 from setuptools import find_packages
+
+from skbuild_conan import setup
 
 setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     name="simple_skbuild_conan_example",

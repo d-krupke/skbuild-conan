@@ -4,10 +4,11 @@ Unit tests for conan_helper module.
 These tests validate the ConanHelper class and related utilities
 using mocks to avoid requiring a real conan installation.
 """
-import json
+
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from skbuild_conan.conan_helper import (
     ConanHelper,
@@ -15,14 +16,13 @@ from skbuild_conan.conan_helper import (
     retry_on_network_error,
 )
 from skbuild_conan.exceptions import (
-    ConanVersionError,
+    ConanDependencyError,
     ConanNetworkError,
     ConanOutputError,
     ConanRecipeError,
-    ConanDependencyError,
+    ConanVersionError,
 )
 from skbuild_conan.logging_utils import LogLevel
-
 
 # ---------------------------------------------------------------------------
 # EnvContextManager
@@ -154,18 +154,15 @@ class TestRetryOnNetworkError:
 
 def _make_helper(tmp_path, conan_version="2.5.0", **kwargs):
     """Create a ConanHelper with conan internals mocked out."""
-    defaults = dict(
-        output_folder=str(tmp_path / "conan_out"),
-        log_level=LogLevel.QUIET,
-    )
-    defaults.update(kwargs)
+    kwargs.setdefault("output_folder", str(tmp_path / "conan_out"))
+    kwargs.setdefault("log_level", LogLevel.QUIET)
 
-    with patch("skbuild_conan.conan_helper.conan") as mock_conan, \
-         patch.object(ConanHelper, "_conan_cli", return_value="{}"):
+    with (
+        patch("skbuild_conan.conan_helper.conan") as mock_conan,
+        patch.object(ConanHelper, "_conan_cli", return_value="{}"),
+    ):
         mock_conan.__version__ = conan_version
-        helper = ConanHelper(**defaults)
-
-    return helper
+        return ConanHelper(**kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -183,8 +180,10 @@ class TestConanHelperVersionCheck:
 
     def test_conan_1x_rejected(self, tmp_path):
         """Test that Conan 1.x raises ConanVersionError."""
-        with patch("skbuild_conan.conan_helper.conan") as mock_conan, \
-             patch.object(ConanHelper, "_conan_cli", return_value="{}"):
+        with (
+            patch("skbuild_conan.conan_helper.conan") as mock_conan,
+            patch.object(ConanHelper, "_conan_cli", return_value="{}"),
+        ):
             mock_conan.__version__ = "1.59.0"
             with pytest.raises(ConanVersionError):
                 ConanHelper(
@@ -194,8 +193,10 @@ class TestConanHelperVersionCheck:
 
     def test_old_conan_2x_warns(self, tmp_path, capsys):
         """Test that old Conan 2.0.x versions produce a warning."""
-        with patch("skbuild_conan.conan_helper.conan") as mock_conan, \
-             patch.object(ConanHelper, "_conan_cli", return_value="{}"):
+        with (
+            patch("skbuild_conan.conan_helper.conan") as mock_conan,
+            patch.object(ConanHelper, "_conan_cli", return_value="{}"),
+        ):
             mock_conan.__version__ = "2.0.5"
             ConanHelper(
                 output_folder=str(tmp_path / "out"),
@@ -203,7 +204,10 @@ class TestConanHelperVersionCheck:
             )
 
         captured = capsys.readouterr()
-        assert "known issues" in captured.err.lower() or "upgrading" in captured.err.lower()
+        assert (
+            "known issues" in captured.err.lower()
+            or "upgrading" in captured.err.lower()
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +239,9 @@ class TestConanHelperCmakeArgs:
         helper = _make_helper(tmp_path)
 
         # cmake_layout places generators in build/{BuildType}/generators/
-        generators_dir = tmp_path / "conan_out" / "release" / "build" / "Release" / "generators"
+        generators_dir = (
+            tmp_path / "conan_out" / "release" / "build" / "Release" / "generators"
+        )
         generators_dir.mkdir(parents=True)
         (generators_dir / "conan_toolchain.cmake").touch()
 
@@ -250,7 +256,9 @@ class TestConanHelperCmakeArgs:
         """Test cmake_layout with Debug build type."""
         helper = _make_helper(tmp_path, build_type="Debug")
 
-        generators_dir = tmp_path / "conan_out" / "debug" / "build" / "Debug" / "generators"
+        generators_dir = (
+            tmp_path / "conan_out" / "debug" / "build" / "Debug" / "generators"
+        )
         generators_dir.mkdir(parents=True)
         (generators_dir / "conan_toolchain.cmake").touch()
 
@@ -280,7 +288,7 @@ class TestConanHelperCmakeArgs:
         """Test that RuntimeError is raised when toolchain file is missing."""
         helper = _make_helper(tmp_path)
 
-        with pytest.raises(RuntimeError, match="conan_toolchain.cmake not found"):
+        with pytest.raises(RuntimeError, match=r"conan_toolchain\.cmake not found"):
             helper.cmake_args()
 
 
@@ -310,8 +318,10 @@ class TestConanEnv:
             seen["CONAN_HOME"] = os.environ.get("CONAN_HOME")
             return MagicMock()
 
-        with patch("skbuild_conan.conan_helper.ConanAPI", side_effect=fake_api), \
-             patch("skbuild_conan.conan_helper.ConanCli"):
+        with (
+            patch("skbuild_conan.conan_helper.ConanAPI", side_effect=fake_api),
+            patch("skbuild_conan.conan_helper.ConanCli"),
+        ):
             helper._conan_cli(["--version"])
 
         assert seen["CONAN_HOME"] == str(home)
@@ -376,9 +386,11 @@ class TestConanToJson:
         """Test that invalid JSON raises ConanOutputError."""
         helper = _make_helper(tmp_path)
 
-        with patch.object(helper, "_conan_cli", return_value="not json at all"):
-            with pytest.raises(ConanOutputError, match="did not return valid JSON"):
-                helper._conan_to_json(["inspect", "-f", "json", "."])
+        with (
+            patch.object(helper, "_conan_cli", return_value="not json at all"),
+            pytest.raises(ConanOutputError, match="did not return valid JSON"),
+        ):
+            helper._conan_to_json(["inspect", "-f", "json", "."])
 
 
 # ---------------------------------------------------------------------------
@@ -400,7 +412,9 @@ class TestGenerateDependencyReport:
     def test_report_lists_requirements(self, tmp_path):
         """Test that the report lists requested requirements."""
         helper = _make_helper(tmp_path)
-        report = helper.generate_dependency_report(requirements=["fmt/10.0.0", "boost/1.82.0"])
+        report = helper.generate_dependency_report(
+            requirements=["fmt/10.0.0", "boost/1.82.0"]
+        )
 
         assert "fmt/10.0.0" in report
         assert "boost/1.82.0" in report
@@ -449,7 +463,7 @@ class TestInstallFromPaths:
         recipe_dir.mkdir()
 
         helper = _make_helper(tmp_path)
-        with pytest.raises(ConanRecipeError, match="Missing conanfile.py"):
+        with pytest.raises(ConanRecipeError, match=r"Missing conanfile\.py"):
             helper.install_from_paths([str(recipe_dir)])
 
     def test_creates_even_when_name_version_is_cached(self, tmp_path):
@@ -467,9 +481,14 @@ class TestInstallFromPaths:
 
         helper = _make_helper(tmp_path)
 
-        with patch.object(
-            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
-        ), patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(
+                helper,
+                "_conan_to_json",
+                return_value={"name": "mypkg", "version": "1.0"},
+            ),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install_from_paths([str(recipe_dir)])
 
         cmd = mock_cli.call_args[0][0]
@@ -484,9 +503,14 @@ class TestInstallFromPaths:
 
         helper = _make_helper(tmp_path)
 
-        with patch.object(
-            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
-        ) as mock_json, patch.object(helper, "_conan_cli"):
+        with (
+            patch.object(
+                helper,
+                "_conan_to_json",
+                return_value={"name": "mypkg", "version": "1.0"},
+            ) as mock_json,
+            patch.object(helper, "_conan_cli"),
+        ):
             helper.install_from_paths([str(recipe_dir)])
 
         called = [call[0][0] for call in mock_json.call_args_list]
@@ -505,9 +529,14 @@ class TestInstallFromPaths:
 
         helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})
 
-        with patch.object(
-            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
-        ), patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(
+                helper,
+                "_conan_to_json",
+                return_value={"name": "mypkg", "version": "1.0"},
+            ),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install_from_paths([str(recipe_dir)])
 
         cmd = mock_cli.call_args[0][0]
@@ -530,8 +559,10 @@ class TestInstall:
         """Test that requirements are passed as --requires flags."""
         helper = _make_helper(tmp_path)
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install(requirements=["fmt/10.0.0", "zlib/1.3"])
 
         # Find the install call (not profile-related)
@@ -545,8 +576,10 @@ class TestInstall:
         """Test that conanfile path is passed when no requirements."""
         helper = _make_helper(tmp_path)
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install(path="/my/project")
 
         cmd = mock_cli.call_args[0][0]
@@ -558,13 +591,17 @@ class TestInstall:
         settings = {"compiler.libcxx": "libstdc++11", "compiler.cppstd": "20"}
         helper = _make_helper(tmp_path, settings=settings)
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install(requirements=["fmt/10.0.0"])
 
         cmd = mock_cli.call_args[0][0]
         # cppstd sorts before libcxx, even though it was inserted second
-        assert cmd.index("compiler.cppstd=20") < cmd.index("compiler.libcxx=libstdc++11")
+        assert cmd.index("compiler.cppstd=20") < cmd.index(
+            "compiler.libcxx=libstdc++11"
+        )
 
     def test_build_type_in_settings_is_dropped(self, tmp_path, capsys):
         """build_type belongs to --build-type, not to the profile settings.
@@ -582,8 +619,10 @@ class TestInstall:
         assert "build_type" not in helper.settings
         assert "build_type" in capsys.readouterr().err.lower()
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install(requirements=["fmt/10.0.0"])
 
         cmd = mock_cli.call_args[0][0]
@@ -594,8 +633,10 @@ class TestInstall:
         """Test that settings such as compiler.cppstd reach the install command."""
         helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli") as mock_cli:
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli") as mock_cli,
+        ):
             helper.install(requirements=["fmt/10.0.0"])
 
         cmd = mock_cli.call_args[0][0]
@@ -606,16 +647,22 @@ class TestInstall:
         """Test that unexpected errors are wrapped in ConanDependencyError."""
         helper = _make_helper(tmp_path)
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli", side_effect=RuntimeError("boom")):
-            with pytest.raises(ConanDependencyError):
-                helper.install(requirements=["fmt/10.0.0"])
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(helper, "_conan_cli", side_effect=RuntimeError("boom")),
+            pytest.raises(ConanDependencyError),
+        ):
+            helper.install(requirements=["fmt/10.0.0"])
 
     def test_install_does_not_wrap_known_errors(self, tmp_path):
         """Test that known error types pass through unwrapped."""
         helper = _make_helper(tmp_path)
 
-        with patch.object(helper, "create_profile"), \
-             patch.object(helper, "_conan_cli", side_effect=ConanNetworkError("timeout")):
-            with pytest.raises(ConanNetworkError):
-                helper.install(requirements=["fmt/10.0.0"])
+        with (
+            patch.object(helper, "create_profile"),
+            patch.object(
+                helper, "_conan_cli", side_effect=ConanNetworkError("timeout")
+            ),
+            pytest.raises(ConanNetworkError),
+        ):
+            helper.install(requirements=["fmt/10.0.0"])

@@ -41,25 +41,25 @@ class TestLogger:
 
     def test_logger_env_variable(self, monkeypatch):
         """Test that log level is read from environment variable."""
-        monkeypatch.setenv('SKBUILD_CONAN_LOG_LEVEL', 'debug')
+        monkeypatch.setenv("SKBUILD_CONAN_LOG_LEVEL", "debug")
         logger = Logger()
         assert logger.log_level == LogLevel.DEBUG
 
     def test_logger_env_variable_case_insensitive(self, monkeypatch):
         """Test that env variable is case-insensitive."""
-        monkeypatch.setenv('SKBUILD_CONAN_LOG_LEVEL', 'VERBOSE')
+        monkeypatch.setenv("SKBUILD_CONAN_LOG_LEVEL", "VERBOSE")
         logger = Logger()
         assert logger.log_level == LogLevel.VERBOSE
 
     def test_logger_invalid_env_defaults_to_normal(self, monkeypatch):
         """Test that invalid env value falls back to NORMAL."""
-        monkeypatch.setenv('SKBUILD_CONAN_LOG_LEVEL', 'invalid')
+        monkeypatch.setenv("SKBUILD_CONAN_LOG_LEVEL", "invalid")
         logger = Logger()
         assert logger.log_level == LogLevel.NORMAL
 
     def test_explicit_level_overrides_env(self, monkeypatch):
         """Test that explicit log level takes precedence over env."""
-        monkeypatch.setenv('SKBUILD_CONAN_LOG_LEVEL', 'quiet')
+        monkeypatch.setenv("SKBUILD_CONAN_LOG_LEVEL", "quiet")
         logger = Logger(LogLevel.VERBOSE)
         assert logger.log_level == LogLevel.VERBOSE
 

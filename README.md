@@ -308,7 +308,10 @@ flags, not the newest one the compiler supports.
 Pin it explicitly in your `setup.py`:
 
 ```python
-conan_profile_settings={"compiler.cppstd": "17"},  # or "20", "23", ...
+setup(
+    ...,
+    conan_profile_settings={"compiler.cppstd": "17"},  # or "20", "23", ...
+)
 ```
 
 See [Setting the C++ standard](#setting-the-c-standard) for details.
@@ -456,6 +459,14 @@ Please note that response times may vary as we prioritize based on available tim
     values. Use the `--build-type` argument.
   - The examples now include `<fmt/format.h>` instead of the `<fmt/core.h>` that no
     longer provides `fmt::format` since fmt 12.
+  - Developer tooling was modernized: `ruff` (lint + format, replacing the separate
+    `pyupgrade` hook) and `ty` (type checking) run in pre-commit, with the rule set
+    pinned in `pyproject.toml` so a local `ruff check` matches the hook. The
+    `cmake-format` hook had its `additional_dependencies`/`types`/`files` keys at the
+    repo level, where pre-commit ignores them; they now sit on the hook. Type hints
+    across the package were updated to PEP 585/604 syntax (the `>=3.9` floor is kept
+    via `from __future__ import annotations`).
+
 - _1.5.0_ Support for conan's `cmake_layout` in conanfiles. Previously, using `[layout] cmake_layout` in a `conanfile.txt` (or `cmake_layout(self)` in `conanfile.py`) caused a "conan_toolchain.cmake not found" error because the generators are placed under `build/{BuildType}/generators/` instead of directly in the output folder. (#7)
 - _1.4.0_ Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)

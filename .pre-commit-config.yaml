@@ -15,12 +15,28 @@ repos:
       - id: requirements-txt-fixer
       - id: trailing-whitespace
 
+  # Lint + format. The rule set lives in [tool.ruff] in pyproject.toml so that
+  # a local `ruff check` sees exactly what this hook does. `ruff` also covers
+  # what the separate pyupgrade hook used to do (the `UP` rules), so that hook
+  # was dropped.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.16.2
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  # Type checking. `ty` runs over the whole project graph rather than only the
+  # changed files, so a change in one module surfaces problems in its
+  # dependents. It is scoped to `src` via [tool.ty.src] in pyproject.toml.
+  # The third-party imports have to be installed in the hook's own environment,
+  # otherwise every one of them reports as unresolved.
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.69
+    hooks:
+      - id: ty
+        additional_dependencies:
+          [conan>=2.0.0, scikit-build>=0.17.3, colorama>=0.4.0]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
@@ -34,20 +50,14 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.21.2"
-    hooks:
-      - id: pyupgrade
-        args: ["--py39-plus"]
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.1.0"
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.9.6
     hooks:
       - id: prettier
         types_or: [yaml, markdown, html, css, scss, javascript, json]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v21.1.8"
+    rev: "v22.1.8"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -55,7 +65,10 @@ repos:
   - repo: https://github.com/cheshirekow/cmake-format-precommit
     rev: v0.6.13
     hooks:
+      # These three keys used to sit at the repo level, where pre-commit
+      # ignores them ("Unexpected key(s) present"). The hook therefore ran on
+      # its own default file selection and without `pyyaml`.
       - id: cmake-format
-    additional_dependencies: [pyyaml]
-    types: [file]
-    files: (\.cmake|CMakeLists.txt)(.in)?$
+        additional_dependencies: [pyyaml]
+        types: [file]
+        files: (\.cmake|CMakeLists.txt)(.in)?$
