@@ -110,9 +110,9 @@ class ConanHelper:
     ):
         self.local_recipes = local_recipes if local_recipes else []
         self.profile = profile
-        self.env = env
         self.build_type = build_type
         self.logger = Logger(log_level)
+        self.env = self._normalize_env(env)
         # Copy, so we never mutate the dict the caller handed us.
         self.settings = dict(settings) if settings else {}
         # `build_type` is not a profile setting here: it comes from the
@@ -130,14 +130,40 @@ class ConanHelper:
         self.generator_folder = os.path.join(
             os.path.abspath(output_folder), self.build_type.lower()
         )
-        env = env if env else {}
-        self._default_profile_name = env.get(
+        self._default_profile_name = self.env.get(
             "CONAN_DEFAULT_PROFILE", os.environ.get("CONAN_DEFAULT_PROFILE", "default")
         )
-        if env:
-            self.logger.verbose(f"Temporarily overriding environment variables: {env}")
+        if self.env:
+            self.logger.verbose(
+                f"Temporarily overriding environment variables: {self.env}"
+            )
         self._check_conan_version()
         self._check_version_compatibility()
+
+    @staticmethod
+    def _normalize_env(
+        env: typing.Optional[typing.Dict],
+    ) -> typing.Dict[str, str]:
+        """
+        The environment overrides, with a relative `CONAN_HOME` made absolute.
+
+        Conan rejects a relative `CONAN_HOME` outright ("please specify an
+        absolute or path starting with ~/"), but the natural way to ask for a
+        project-local cache -- and the way this project documents it -- is
+        `conan_env={"CONAN_HOME": "./conan/cache"}`. Resolve it against the
+        current directory, mirroring what conan itself does for a relative
+        `conan_home` in a `.conanrc` file.
+        """
+        if not env:
+            return {}
+        env = dict(env)
+        conan_home = env.get("CONAN_HOME")
+        if conan_home:
+            expanded = os.path.expanduser(conan_home)
+            if not os.path.isabs(expanded):
+                expanded = os.path.abspath(expanded)
+            env["CONAN_HOME"] = expanded
+        return env
 
     @retry_on_network_error(max_attempts=3, backoff_base=2.0)
     def _conan_cli(self, cmd: typing.List[str]) -> str:
@@ -145,10 +171,13 @@ class ConanHelper:
         self.logger.command(f"conan {printable_cmd}")
 
         f = io.StringIO()
-        conan_api = ConanAPI()
-        conan_cli = ConanCli(conan_api)
         with redirect_stdout(f):
+            # `ConanAPI()` resolves the cache location (`CONAN_HOME`) and loads
+            # the configuration *at construction time*, so it has to be built
+            # inside the override, not before it. Constructing it outside meant
+            # `conan_env={"CONAN_HOME": ...}` silently had no effect.
             with EnvContextManager(self.env):
+                conan_cli = ConanCli(ConanAPI())
                 try:
                     conan_cli.run(cmd)
                 except BaseException as e:
@@ -261,9 +290,19 @@ class ConanHelper:
 
     def install_from_paths(self, paths: typing.List[str]):
         """
-        Installs all the conanfiles to local cache. Will automatically skip if the package
-        is already available. Currently only works on name and version, not user or
-        similar.
+        Exports the local recipes into the conan cache and builds them.
+
+        Every recipe is handed to `conan create --build=missing` on every run.
+        Conan then exports the recipe, computes its revision and package id, and
+        only actually compiles when no matching binary is cached, so a repeated
+        build costs an export rather than a rebuild.
+
+        This used to skip a recipe whose `name/version` was already in the cache.
+        That check ignored where the cached package came from, so a local recipe
+        was silently replaced by an unrelated remote package of the same name --
+        the bundled CGAL recipe, for instance, is `cgal/6.0.1`, exactly the
+        reference ConanCenter provides. It also ignored the settings the cached
+        binary was built with, so changing `compiler.cppstd` never rebuilt it.
         """
         for path in paths:
             self.logger.info(f"Installing local recipe from {path}...")
@@ -276,20 +315,16 @@ class ConanHelper:
 
             try:
                 package_info = self._conan_to_json(["inspect", "-f", "json", path])
-                conan_list = self._conan_to_json(
-                    ["list", "-c", "-f", "json", package_info["name"]]
-                )
                 package_id = f"{package_info['name']}/{package_info['version']}"
-                if package_id in conan_list["Local Cache"].keys():
-                    self.logger.info(f"{package_id} already available. Skipping.")
-                    continue
 
-                self.logger.verbose(f"Building and caching {package_id}...")
+                self.logger.verbose(f"Exporting and building {package_id}...")
                 cmd = ["create", path, "-pr", self.profile]
-                # The same settings as for `install`. Without them, the recipe
-                # would be built with the profile defaults (e.g. the
-                # auto-detected `compiler.cppstd`) and the later `install` would
-                # have to build it a second time to match the requested settings.
+                # The same settings as for `install`. Without them the recipe is
+                # built with the profile defaults, and conan's binary
+                # compatibility fallback then happily resolves that mismatched
+                # binary for the `install` below -- e.g. serving a `gnu20`
+                # build to a `compiler.cppstd=20` request, silently compiling
+                # your dependency with language extensions you turned off.
                 cmd += self._settings_args()
                 cmd += [
                     "-s",

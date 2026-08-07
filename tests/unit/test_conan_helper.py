@@ -285,6 +285,77 @@ class TestConanHelperCmakeArgs:
 
 
 # ---------------------------------------------------------------------------
+# conan_env / CONAN_HOME
+# ---------------------------------------------------------------------------
+
+
+class TestConanEnv:
+    """Tests for the environment overrides passed as `conan_env`.
+
+    `ConanAPI()` reads `CONAN_HOME` and loads the configuration in its
+    constructor, so the override has to be active while it is built. It used to
+    be constructed before the override was applied, which made
+    `conan_env={"CONAN_HOME": ...}` a no-op.
+    """
+
+    def test_conan_api_sees_the_env_override(self, tmp_path, monkeypatch):
+        """The env override must be active while ConanAPI is constructed."""
+        monkeypatch.delenv("CONAN_HOME", raising=False)
+        home = tmp_path / "cache"
+        helper = _make_helper(tmp_path, env={"CONAN_HOME": str(home)})
+
+        seen = {}
+
+        def fake_api():
+            seen["CONAN_HOME"] = os.environ.get("CONAN_HOME")
+            return MagicMock()
+
+        with patch("skbuild_conan.conan_helper.ConanAPI", side_effect=fake_api), \
+             patch("skbuild_conan.conan_helper.ConanCli"):
+            helper._conan_cli(["--version"])
+
+        assert seen["CONAN_HOME"] == str(home)
+
+    def test_relative_conan_home_is_made_absolute(self, tmp_path):
+        """Conan rejects a relative CONAN_HOME, so resolve it against cwd.
+
+        The README and the CGAL example both document
+        `conan_env={"CONAN_HOME": "./conan/cache"}`, which conan would refuse
+        with "please specify an absolute or path starting with ~/".
+        """
+        helper = _make_helper(tmp_path, env={"CONAN_HOME": "./conan/cache"})
+
+        assert os.path.isabs(helper.env["CONAN_HOME"])
+        assert helper.env["CONAN_HOME"] == os.path.abspath("./conan/cache")
+
+    def test_absolute_conan_home_is_untouched(self, tmp_path):
+        """An already absolute path must be passed through unchanged."""
+        home = str(tmp_path / "cache")
+        helper = _make_helper(tmp_path, env={"CONAN_HOME": home})
+
+        assert helper.env["CONAN_HOME"] == home
+
+    def test_tilde_conan_home_is_expanded(self, tmp_path):
+        """`~/...` is expanded rather than treated as a relative path."""
+        helper = _make_helper(tmp_path, env={"CONAN_HOME": "~/my_conan_home"})
+
+        assert helper.env["CONAN_HOME"] == os.path.expanduser("~/my_conan_home")
+
+    def test_other_env_vars_are_untouched(self, tmp_path):
+        """Only CONAN_HOME gets path treatment; everything else passes through."""
+        helper = _make_helper(tmp_path, env={"CC": "", "CXX": "./not/a/path"})
+
+        assert helper.env == {"CC": "", "CXX": "./not/a/path"}
+
+    def test_caller_env_dict_not_mutated(self, tmp_path):
+        """The caller's dict must not be rewritten under them."""
+        user_env = {"CONAN_HOME": "./conan/cache"}
+        _make_helper(tmp_path, env=user_env)
+
+        assert user_env == {"CONAN_HOME": "./conan/cache"}
+
+
+# ---------------------------------------------------------------------------
 # _conan_to_json
 # ---------------------------------------------------------------------------
 
@@ -381,30 +452,52 @@ class TestInstallFromPaths:
         with pytest.raises(ConanRecipeError, match="Missing conanfile.py"):
             helper.install_from_paths([str(recipe_dir)])
 
-    def test_skips_already_installed(self, tmp_path):
-        """Test that already-installed packages are skipped."""
+    def test_creates_even_when_name_version_is_cached(self, tmp_path):
+        """A local recipe is exported on every run, never skipped by name/version.
+
+        The cache can hold a package with the same `name/version` that came from
+        a remote -- the bundled CGAL recipe is `cgal/6.0.1`, the very reference
+        ConanCenter serves. Skipping on that match silently swapped the local
+        recipe for the remote package. `conan create --build=missing` is cheap
+        when nothing changed, so it always runs and conan decides.
+        """
         recipe_dir = tmp_path / "recipe"
         recipe_dir.mkdir()
         (recipe_dir / "conanfile.py").touch()
 
         helper = _make_helper(tmp_path)
 
-        inspect_result = json.dumps({"name": "mypkg", "version": "1.0"})
-        list_result = json.dumps({"Local Cache": {"mypkg/1.0": {}}})
-
-        with patch.object(helper, "_conan_to_json", side_effect=[
-            json.loads(inspect_result),
-            json.loads(list_result),
-        ]):
-            # Should not raise — package is already cached
+        with patch.object(
+            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
+        ), patch.object(helper, "_conan_cli") as mock_cli:
             helper.install_from_paths([str(recipe_dir)])
+
+        cmd = mock_cli.call_args[0][0]
+        assert cmd[0] == "create"
+        assert "--build=missing" in cmd
+
+    def test_does_not_query_the_cache_listing(self, tmp_path):
+        """`conan list` is no longer consulted; it only enabled the bad skip."""
+        recipe_dir = tmp_path / "recipe"
+        recipe_dir.mkdir()
+        (recipe_dir / "conanfile.py").touch()
+
+        helper = _make_helper(tmp_path)
+
+        with patch.object(
+            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
+        ) as mock_json, patch.object(helper, "_conan_cli"):
+            helper.install_from_paths([str(recipe_dir)])
+
+        called = [call[0][0] for call in mock_json.call_args_list]
+        assert all("list" not in args for args in called)
 
     def test_create_uses_profile_settings(self, tmp_path):
         """Local recipes must be built with the same settings as the dependencies.
 
-        Otherwise a recipe would first be built with the profile defaults (e.g.
-        the auto-detected `compiler.cppstd`) and then rebuilt by `install` to
-        match the requested settings.
+        Otherwise the recipe is built with the profile defaults and conan's
+        binary compatibility fallback resolves that mismatched binary for the
+        later `install` -- e.g. a `gnu20` build answering a `cppstd=20` request.
         """
         recipe_dir = tmp_path / "recipe"
         recipe_dir.mkdir()
@@ -412,10 +505,9 @@ class TestInstallFromPaths:
 
         helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})
 
-        with patch.object(helper, "_conan_to_json", side_effect=[
-            {"name": "mypkg", "version": "1.0"},
-            {"Local Cache": {}},  # not cached yet -> must be created
-        ]), patch.object(helper, "_conan_cli") as mock_cli:
+        with patch.object(
+            helper, "_conan_to_json", return_value={"name": "mypkg", "version": "1.0"}
+        ), patch.object(helper, "_conan_cli") as mock_cli:
             helper.install_from_paths([str(recipe_dir)])
 
         cmd = mock_cli.call_args[0][0]

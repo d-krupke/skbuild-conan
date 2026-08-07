@@ -16,5 +16,10 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     # See https://github.com/d-krupke/skbuild-conan#setting-the-c-standard
     conan_profile_settings={"compiler.cppstd": "17"},
     cmake_minimum_required_version="3.23",
+    # Use a project-local conan cache instead of the user-wide `~/.conan2`, so
+    # this example never touches your normal cache. The path is relative to the
+    # directory you build from. Note that nothing is shared with your other
+    # projects, so the first build downloads and compiles everything (gmp, mpfr,
+    # boost, CGAL) from scratch. Drop this line to use the shared cache.
     conan_env={"CONAN_HOME": "./conan/cache"},
 )

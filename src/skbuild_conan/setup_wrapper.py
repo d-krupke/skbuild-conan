@@ -136,6 +136,10 @@ def setup(
         is far from perfect, so often you need to build your own recipes. You don't
         always want to upload those, so this argument gives you the option to integrate
         local recipes. Just the path to the folder containing the `conanfile.py`.
+        Each recipe is exported into the cache on every build via
+        `conan create --build=missing`, with the same `conan_profile_settings` as
+        the rest of your dependencies. Conan skips the compile when a matching
+        binary is cached, so a repeated build only pays for the export.
     :param conan_requirements: Instead of providing a conanfile, you can simply state
         the dependencies here. E.g. `["fmt/[>=10.0.0]"]` to add fmt in version >=10.0.0.
     :param conan_profile_settings: Overwrite conan profile settings. You should use
@@ -143,7 +147,8 @@ def setup(
         `{"compiler.cppstd": "20"}`. Otherwise, the auto-detected profile uses
         whatever standard the compiler enables without any flags, which can be as
         low as C++14 on some platforms and makes dependencies such as CGAL fail.
-        Also necessary for ABI-problems, etc.
+        Also necessary for ABI-problems, etc. `build_type` does not belong here;
+        it comes from the `--build-type` argument and is dropped with a warning.
     :param wrapped_setup: The setup-method that is going to be wrapped. This would allow
         you to extend already extended setup functions. By default, it is the `setup`
         of `skbuild`, which extends the `setup` of `setuptools`.
@@ -160,7 +165,11 @@ def setup(
         default it will override `CC` and `CXX` with empty strings. This is necessary
         to work around problems with anaconda, but it should not cause any problems
         with other setups. You could define `CONAN_HOME` to `./conan/cache` to use
-        a local cache and not install anything to the user space.
+        a local cache and not install anything to the user space. A relative
+        `CONAN_HOME` is resolved against the current working directory, because
+        conan itself only accepts absolute paths. Be aware that a project-local
+        cache is not shared with your other projects, so everything is downloaded
+        and built again for this one.
     :param conan_log_level: The logging level for conan operations. If None, reads
         from environment variable SKBUILD_CONAN_LOG_LEVEL (quiet/normal/verbose/debug).
         Defaults to NORMAL. Use LogLevel.QUIET for minimal output, LogLevel.DEBUG for

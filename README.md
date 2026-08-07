@@ -140,6 +140,10 @@ The added options are
   is far from perfect, so often you need to build your own recipes. You don't
   always want to upload those, so this argument gives you the option to integrate
   local recipes. Just the path to the folder containing the `conanfile.py`.
+  Each recipe is exported into the cache on every build via
+  `conan create --build=missing`, using the same `conan_profile_settings` as the
+  rest of your dependencies. Conan skips the compile when a matching binary is
+  already cached, so a repeated build only pays for the export.
 - `conan_requirements`: Instead of providing a conanfile, you can simply state
   the dependencies here. E.g. `["fmt/[>=10.0.0]"]` to add fmt in version >=10.0.0.
 - `conan_profile_settings`: Overwrite conan profile settings. You should use this to
@@ -162,7 +166,11 @@ The added options are
   default it will override `CC` and `CXX` with empty strings. This is necessary
   to work around problems with anaconda, but it should not cause any problems
   with other setups. You could define `CONAN_HOME` to `./conan/cache` to use
-  a local cache and not install anything to the user space.
+  a local cache and not install anything to the user space. A relative
+  `CONAN_HOME` is resolved against the current working directory, because conan
+  itself only accepts absolute paths. Note that a project-local cache is not
+  shared with your other projects, so everything is downloaded and built again
+  for this one.
 
 An example usage could be as follows
 
@@ -205,9 +213,17 @@ your machine but fail elsewhere: CGAL, for example, checks for C++17 and aborts
 the build if the profile says `14`. Windows/MSVC and older GCC/Clang are the
 usual offenders.
 
-Pinning the standard also makes the build reproducible: the standard becomes part
-of the conan package id, so all your dependencies are built and cached against
-the same standard as your bindings.
+Pinning the standard also makes the build more reproducible: the standard is part
+of the conan package id, so your dependencies are built and cached against the
+standard you asked for rather than against whatever the machine happened to
+detect.
+
+Note that conan does not treat the package id as an exact requirement. If no
+binary matches, its binary compatibility plugin looks for a _compatible_ one and
+will accept, for example, a `gnu20` build for a `compiler.cppstd=20` request —
+giving you the language extensions you just turned off, without an error. Pinning
+the setting everywhere (which skbuild-conan now does for local recipes too) is
+what keeps that fallback from being reached in the first place.
 
 A few details worth knowing:
 
@@ -235,6 +251,9 @@ A few details worth knowing:
 
 - The setting applies to everything skbuild-conan builds, including the local
   recipes you pass via `conan_recipes`.
+- **Changing the standard later rebuilds your dependencies.** The standard is
+  part of the package id, so conan has to build binaries it does not have yet.
+  That is expected, and a one-off cost per standard you use.
 
 All examples in [./examples](./examples) follow this pattern.
 
@@ -403,15 +422,40 @@ Please note that response times may vary as we prioritize based on available tim
 
 ## Changelog
 
-- _1.5.1_ Documentation on [setting the C++ standard](#setting-the-c-standard) via
-  `conan_profile_settings={"compiler.cppstd": ...}`, and all examples updated to pin it.
-  The examples no longer set `CMAKE_CXX_STANDARD` in their `CMakeLists.txt`, as this
-  overrides the value the conan toolchain derives from `compiler.cppstd`. Local recipes
-  passed via `conan_recipes` are now built with the same `conan_profile_settings` as the
-  rest of the dependencies, instead of the profile defaults (which caused them to be
-  built twice). (#16)
-  The examples now include `<fmt/format.h>` instead of the `<fmt/core.h>` that no
-  longer provides `fmt::format` since fmt 12.
+- _1.6.0_ C++ standard documentation plus a set of fixes around conan settings and
+  local recipes.
+
+  - Documented [setting the C++ standard](#setting-the-c-standard) via
+    `conan_profile_settings={"compiler.cppstd": ...}`, with all examples updated to
+    pin it. (#16)
+  - The examples no longer set `CMAKE_CXX_STANDARD` in their `CMakeLists.txt`, as
+    that overrides the value the conan toolchain derives from `compiler.cppstd`.
+    They declare a per-target minimum with `target_compile_features` instead.
+  - **Local recipes are now built with your `conan_profile_settings`.** Previously
+    only `build_type` was forwarded to `conan create`, so a recipe was built with
+    the profile defaults. Conan's binary compatibility fallback then resolved that
+    mismatched binary for the subsequent `install` — asking for `compiler.cppstd=20`
+    could silently get you a `gnu20` build, i.e. language extensions you had turned
+    off.
+  - **Local recipes are no longer skipped when their `name/version` is already in
+    the cache.** That check ignored where the cached package came from, so a local
+    recipe was silently replaced by an unrelated remote package of the same name —
+    the bundled CGAL recipe is `cgal/6.0.1`, exactly the reference ConanCenter
+    serves. It also ignored the settings of the cached binary, so changing
+    `compiler.cppstd` never rebuilt it. Every recipe is now handed to
+    `conan create --build=missing` on each run; conan skips the build itself when a
+    matching binary exists, so a warm rebuild costs an export rather than a compile.
+  - **`conan_env` is now actually applied to conan.** `ConanAPI()` was constructed
+    before the environment override was installed, and it resolves `CONAN_HOME` and
+    loads the configuration in its constructor — so the documented
+    `conan_env={"CONAN_HOME": "./conan/cache"}` silently had no effect and the
+    user-wide cache was used instead. A relative `CONAN_HOME` is now resolved
+    against the current directory, since conan itself rejects one.
+  - `build_type` passed via `conan_profile_settings` is now dropped with a warning
+    instead of emitting a conan command line that sets it twice with conflicting
+    values. Use the `--build-type` argument.
+  - The examples now include `<fmt/format.h>` instead of the `<fmt/core.h>` that no
+    longer provides `fmt::format` since fmt 12.
 - _1.5.0_ Support for conan's `cmake_layout` in conanfiles. Previously, using `[layout] cmake_layout` in a `conanfile.txt` (or `cmake_layout(self)` in `conanfile.py`) caused a "conan_toolchain.cmake not found" error because the generators are placed under `build/{BuildType}/generators/` instead of directly in the output folder. (#7)
 - _1.4.0_ Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)

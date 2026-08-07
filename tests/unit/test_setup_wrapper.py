@@ -165,8 +165,16 @@ class TestSetup:
         assert settings["compiler.cppstd"] == "20"
 
     def test_profile_settings_not_mutated(self, monkeypatch):
-        """The caller's dict must not be modified by the libcxx workaround."""
+        """The caller's dict must not be modified by the libcxx workaround.
+
+        The workaround only runs on Linux, so `platform.system` is pinned --
+        otherwise this assertion is vacuously true on macOS and Windows and
+        would not catch a regression there.
+        """
         monkeypatch.setattr(sys, "argv", ["setup.py"])
+        monkeypatch.setattr(
+            "skbuild_conan.setup_wrapper.platform.system", lambda: "Linux"
+        )
 
         user_settings = {"compiler.cppstd": "20"}
 
@@ -182,6 +190,10 @@ class TestSetup:
                 name="testpkg",
             )
 
+        # The workaround must have been applied to the copy...
+        settings = mock_helper_cls.call_args.kwargs["settings"]
+        assert settings["compiler.libcxx"] == "libstdc++11"
+        # ...and not to the caller's dict.
         assert user_settings == {"compiler.cppstd": "20"}
 
     def test_calls_install_with_requirements(self, monkeypatch):
