@@ -23,6 +23,7 @@ src/skbuild_conan/
   exceptions.py        # Exception hierarchy
 
 tests/unit/            # Unit tests (mocked, no conan needed)
+tests/docker/          # Multi-compiler example builds in containers
 examples/              # Integration test projects
 .github/workflows/     # CI: unit tests, integration tests, release
 ```
@@ -36,7 +37,19 @@ pytest tests/unit/ -v
 # Integration tests (requires conan + C++ compiler)
 pip install examples/simple_skbuild_conan_example
 pytest examples/simple_skbuild_conan_example/tests
+
+# All examples against the local checkout
+./test_examples.sh
+
+# All examples across several Linux compilers (requires docker)
+./tests/docker/run.sh
 ```
+
+`tests/docker/` builds the examples in containers with different default C++
+standards. `ubuntu-latest` ships a GCC defaulting to `gnu17`, so it cannot
+reproduce the class of failure where a dependency needs a newer standard than
+the compiler enables by default; `gcc:10` (default `gnu14`) can. See
+[tests/docker/README.md](tests/docker/README.md).
 
 ## Code Quality
 

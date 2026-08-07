@@ -7,7 +7,7 @@ where = ["src"]
 
 [project]
 name = "skbuild_conan"
-version = "v1.5.0"
+version = "v1.6.0"
 authors = [
     { name = "TU Braunschweig, IBR, Algorithms Group (Dominik Krupke)", email = "krupke@ibr.cs.tu-bs.de" },
 ]
@@ -31,3 +31,46 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/d-krupke/skbuild-conan"
+
+# ---------------------------------------------------------------------------
+# Tooling
+#
+# The lint rules live here rather than in .pre-commit-config.yaml so that a
+# plain `ruff check` in your editor or shell agrees with what the hook does.
+# Without this section ruff falls back to its built-in defaults, which drift
+# between releases.
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+src = ["src"]
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "I",   # isort
+    "ICN", # flake8-import-conventions
+    "PGH", # pygrep-hooks
+    "PIE", # flake8-pie
+    "PT",  # flake8-pytest-style
+    "RET", # flake8-return
+    "RUF", # ruff-specific
+    "SIM", # flake8-simplify
+    "UP",  # pyupgrade
+    "YTT", # flake8-2020
+]
+
+[tool.ruff.lint.per-file-ignores]
+# `from ._bindings import *` is how the examples re-export their compiled
+# module. The names only exist after the C++ build, so ruff cannot see them.
+"examples/*/src/*/__init__.py" = ["F403"]
+
+[tool.ty.environment]
+python-version = "3.9"
+
+[tool.ty.src]
+# Scope ty to the package itself. The `ty` pre-commit hook runs `ty check`
+# without a path argument and would otherwise also walk the examples, whose
+# imports only resolve once their C++ extension has been compiled.
+include = ["src"]

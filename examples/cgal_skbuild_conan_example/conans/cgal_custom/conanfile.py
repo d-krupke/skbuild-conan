@@ -9,10 +9,10 @@ for more information.
 """
 
 import os
+
 from conan import ConanFile
-from conan.tools import files
-from conan.tools import scm
-from conan.tools.cmake import CMake, CMakeToolchain
+from conan.tools import files, scm
+from conan.tools.cmake import CMake
 
 required_conan_version = ">=2.0.0"
 
@@ -82,7 +82,7 @@ class CgalConan(ConanFile):
             self,
             **self.conan_data["sources"][self.version],
             destination=self._source_subfolder,
-            strip_root=True
+            strip_root=True,
         )
 
     def build(self):

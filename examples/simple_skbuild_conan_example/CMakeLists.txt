@@ -11,8 +11,12 @@ if(CXX)
   enable_language(CXX)
 endif()
 project(simple_skbuild_conan_example CXX)
-# Using C++-17 (most features with good support at 2022)
-set(CMAKE_CXX_STANDARD 17)
+# NOTE: We deliberately do NOT `set(CMAKE_CXX_STANDARD ...)` here. The conan
+# toolchain sets it from `compiler.cppstd` (see `conan_profile_settings` in
+# setup.py), and overriding it here would compile the bindings against a
+# different standard than the dependencies. Instead, each target below declares
+# the standard it *at least* needs via `target_compile_features`.
+
 # The code needs to be compiled as PIC to build the shared lib for python.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Workaround for some Macs (if I remember correctly)
@@ -45,6 +49,9 @@ FetchContent_MakeAvailable(pybind11)
 # ----------------------------------------------------
 # the name of the module must equal the one in the .cpp-file!
 pybind11_add_module(_bindings src/simple_skbuild_conan_example/_bindings.cpp)
+# Require *at least* C++-17. A higher standard coming from the conan toolchain
+# is fine; this only prevents building with an older one.
+target_compile_features(_bindings PRIVATE cxx_std_17)
 # link to the library
 target_link_libraries(_bindings PRIVATE fmt::fmt)
 

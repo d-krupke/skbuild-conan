@@ -10,7 +10,7 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 // fmt
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 // Getting this name right is important! It has to equal the name in the
 // CMakeLists.txt.

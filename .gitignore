@@ -165,6 +165,10 @@ _skbuild/
 examples/simple_skbuild_conan_example/CMakeUserPresets.json
 examples/cgal_skbuild_conan_example/conans/cgal_custom/test_package/CMakeUserPresets.json
 examples/cgal_skbuild_conan_example/CMakeUserPresets.json
-examples/simple_skbuild_conan_example/{self.generator_folder}/CMakePresets.json
 examples/cgal_skbuild_conanio_example/CMakeUserPresets.json
+
+# The CGAL example asks for a project-local conan cache via
+# `conan_env={"CONAN_HOME": "./conan/cache"}`. That is several GB of downloaded
+# and compiled dependencies, none of which belongs in the repository.
+examples/cgal_skbuild_conan_example/conan/
 examples/cmake_layout_example/CMakeUserPresets.json

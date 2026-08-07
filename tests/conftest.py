@@ -4,8 +4,10 @@ Pytest configuration and shared fixtures.
 This file contains pytest configuration and fixtures that are
 available to all test modules.
 """
-import pytest
+
 import os
+
+import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -17,7 +19,7 @@ def clean_env(monkeypatch):
     environment variables.
     """
     # Remove skbuild-conan env vars if they exist
-    monkeypatch.delenv('SKBUILD_CONAN_LOG_LEVEL', raising=False)
+    monkeypatch.delenv("SKBUILD_CONAN_LOG_LEVEL", raising=False)
 
 
 @pytest.fixture

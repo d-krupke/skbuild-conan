@@ -4,37 +4,43 @@ Logging utilities for skbuild-conan.
 Provides structured logging with configurable verbosity levels and
 cross-platform color support for better transparency.
 """
+
+from __future__ import annotations
+
 import os
 import sys
 import time
 from enum import IntEnum
-from typing import Optional
 
 # Try to import colorama for cross-platform color support
 try:
-    from colorama import init as colorama_init, Fore, Style
+    from colorama import Fore, Style
+    from colorama import init as colorama_init
+
     colorama_init(autoreset=True)
     HAS_COLORAMA = True
 except ImportError:
     HAS_COLORAMA = False
+
     # Fallback color codes (will work on Unix-like systems)
     class Fore:
-        BLUE = '\033[94m' if sys.platform != 'win32' else ''
-        RED = '\033[91m' if sys.platform != 'win32' else ''
-        YELLOW = '\033[93m' if sys.platform != 'win32' else ''
-        GREEN = '\033[92m' if sys.platform != 'win32' else ''
-        CYAN = '\033[96m' if sys.platform != 'win32' else ''
+        BLUE = "\033[94m" if sys.platform != "win32" else ""
+        RED = "\033[91m" if sys.platform != "win32" else ""
+        YELLOW = "\033[93m" if sys.platform != "win32" else ""
+        GREEN = "\033[92m" if sys.platform != "win32" else ""
+        CYAN = "\033[96m" if sys.platform != "win32" else ""
 
     class Style:
-        RESET_ALL = '\033[0m' if sys.platform != 'win32' else ''
+        RESET_ALL = "\033[0m" if sys.platform != "win32" else ""
 
 
 class LogLevel(IntEnum):
     """Log verbosity levels."""
-    QUIET = 0    # Only errors
-    NORMAL = 1   # Standard operation messages
+
+    QUIET = 0  # Only errors
+    NORMAL = 1  # Standard operation messages
     VERBOSE = 2  # Detailed operation info
-    DEBUG = 3    # Everything including conan output
+    DEBUG = 3  # Everything including conan output
 
 
 class Logger:
@@ -45,7 +51,7 @@ class Logger:
     Supports colored output on all platforms when colorama is available.
     """
 
-    def __init__(self, log_level: Optional[LogLevel] = None):
+    def __init__(self, log_level: LogLevel | None = None):
         """
         Initialize the logger.
 
@@ -57,28 +63,33 @@ class Logger:
         if log_level is None:
             log_level = self._get_log_level_from_env()
         self.log_level = log_level
-        self._phase_start_time: Optional[float] = None
-        self._current_phase: Optional[str] = None
+        self._phase_start_time: float | None = None
+        self._current_phase: str | None = None
 
     def _get_log_level_from_env(self) -> LogLevel:
         """Get log level from environment variable."""
-        env_level = os.environ.get('SKBUILD_CONAN_LOG_LEVEL', 'normal').lower()
+        env_level = os.environ.get("SKBUILD_CONAN_LOG_LEVEL", "normal").lower()
         level_map = {
-            'quiet': LogLevel.QUIET,
-            'normal': LogLevel.NORMAL,
-            'verbose': LogLevel.VERBOSE,
-            'debug': LogLevel.DEBUG,
+            "quiet": LogLevel.QUIET,
+            "normal": LogLevel.NORMAL,
+            "verbose": LogLevel.VERBOSE,
+            "debug": LogLevel.DEBUG,
         }
         return level_map.get(env_level, LogLevel.NORMAL)
 
     def error(self, msg: str):
         """Log an error message (always shown)."""
-        print(f"{Fore.RED}[skbuild-conan ERROR] {msg}{Style.RESET_ALL}", file=sys.stderr)
+        print(
+            f"{Fore.RED}[skbuild-conan ERROR] {msg}{Style.RESET_ALL}", file=sys.stderr
+        )
 
     def warning(self, msg: str):
         """Log a warning message (shown at NORMAL and above)."""
         if self.log_level >= LogLevel.NORMAL:
-            print(f"{Fore.YELLOW}[skbuild-conan WARN] {msg}{Style.RESET_ALL}", file=sys.stderr)
+            print(
+                f"{Fore.YELLOW}[skbuild-conan WARN] {msg}{Style.RESET_ALL}",
+                file=sys.stderr,
+            )
 
     def info(self, msg: str):
         """Log an info message (shown at NORMAL and above)."""
@@ -106,6 +117,7 @@ class Logger:
             print(f"[skbuild-conan DEBUG] {msg}")
             if exc_info:
                 import traceback
+
                 traceback.print_exc()
 
     def command(self, cmd: str):
@@ -123,9 +135,9 @@ class Logger:
         self._current_phase = phase_name
         self._phase_start_time = time.time()
         if self.log_level >= LogLevel.NORMAL:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"[skbuild-conan] {phase_name}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
     def exit_phase(self, success: bool = True):
         """
@@ -137,7 +149,11 @@ class Logger:
         if self._phase_start_time is not None:
             elapsed = time.time() - self._phase_start_time
             if self.log_level >= LogLevel.VERBOSE:
-                status = f"{Fore.GREEN}completed{Style.RESET_ALL}" if success else f"{Fore.RED}failed{Style.RESET_ALL}"
+                status = (
+                    f"{Fore.GREEN}completed{Style.RESET_ALL}"
+                    if success
+                    else f"{Fore.RED}failed{Style.RESET_ALL}"
+                )
                 print(f"[skbuild-conan] Phase {status} in {elapsed:.1f}s")
 
         self._current_phase = None

@@ -4,9 +4,11 @@ Unit tests for input validation.
 These tests validate that setup arguments are properly validated
 before expensive conan operations are performed.
 """
+
 import pytest
-from skbuild_conan.setup_wrapper import validate_setup_args
+
 from skbuild_conan.exceptions import ValidationError
+from skbuild_conan.setup_wrapper import validate_setup_args
 
 
 class TestRequirementValidation:
@@ -16,26 +18,20 @@ class TestRequirementValidation:
         """Test that valid requirements are accepted."""
         # Should not raise
         validate_setup_args(
-            conanfile=".",
-            conan_recipes=None,
-            conan_requirements=["fmt/10.0.0"]
+            conanfile=".", conan_recipes=None, conan_requirements=["fmt/10.0.0"]
         )
 
     def test_requirement_with_version_range_accepted(self):
         """Test that version ranges are accepted."""
         validate_setup_args(
-            conanfile=".",
-            conan_recipes=None,
-            conan_requirements=["fmt/[>=10.0.0]"]
+            conanfile=".", conan_recipes=None, conan_requirements=["fmt/[>=10.0.0]"]
         )
 
     def test_requirement_without_slash_rejected(self):
         """Test that requirements without '/' are rejected."""
         with pytest.raises(ValidationError) as exc_info:
             validate_setup_args(
-                conanfile=".",
-                conan_recipes=None,
-                conan_requirements=["invalid_format"]
+                conanfile=".", conan_recipes=None, conan_requirements=["invalid_format"]
             )
 
         assert "Invalid requirement format" in str(exc_info.value)
@@ -47,7 +43,7 @@ class TestRequirementValidation:
             validate_setup_args(
                 conanfile=".",
                 conan_recipes=None,
-                conan_requirements=["invalid1", "fmt/10.0.0", "invalid2"]
+                conan_requirements=["invalid1", "fmt/10.0.0", "invalid2"],
             )
 
         error_msg = str(exc_info.value)
@@ -58,11 +54,7 @@ class TestRequirementValidation:
 
     def test_empty_requirements_accepted(self):
         """Test that no requirements is valid."""
-        validate_setup_args(
-            conanfile=".",
-            conan_recipes=None,
-            conan_requirements=None
-        )
+        validate_setup_args(conanfile=".", conan_recipes=None, conan_requirements=None)
 
 
 class TestConanfileValidation:
@@ -70,11 +62,7 @@ class TestConanfileValidation:
 
     def test_default_conanfile_path_accepted(self):
         """Test that default '.' path is accepted."""
-        validate_setup_args(
-            conanfile=".",
-            conan_recipes=None,
-            conan_requirements=None
-        )
+        validate_setup_args(conanfile=".", conan_recipes=None, conan_requirements=None)
 
     def test_nonexistent_conanfile_rejected(self):
         """Test that non-existent conanfile path is rejected."""
@@ -82,7 +70,7 @@ class TestConanfileValidation:
             validate_setup_args(
                 conanfile="/nonexistent/path",
                 conan_recipes=None,
-                conan_requirements=None
+                conan_requirements=None,
             )
 
         assert "does not exist" in str(exc_info.value)
@@ -95,9 +83,7 @@ class TestConanfileValidation:
         test_dir.mkdir()
 
         validate_setup_args(
-            conanfile=str(test_dir),
-            conan_recipes=None,
-            conan_requirements=None
+            conanfile=str(test_dir), conan_recipes=None, conan_requirements=None
         )
 
 
@@ -110,7 +96,7 @@ class TestRecipeValidation:
             validate_setup_args(
                 conanfile=".",
                 conan_recipes=["/nonexistent/recipe"],
-                conan_requirements=None
+                conan_requirements=None,
             )
 
         error_msg = str(exc_info.value)
@@ -124,9 +110,7 @@ class TestRecipeValidation:
 
         with pytest.raises(ValidationError) as exc_info:
             validate_setup_args(
-                conanfile=".",
-                conan_recipes=[str(recipe_dir)],
-                conan_requirements=None
+                conanfile=".", conan_recipes=[str(recipe_dir)], conan_requirements=None
             )
 
         error_msg = str(exc_info.value)
@@ -141,9 +125,7 @@ class TestRecipeValidation:
 
         # Should not raise
         validate_setup_args(
-            conanfile=".",
-            conan_recipes=[str(recipe_dir)],
-            conan_requirements=None
+            conanfile=".", conan_recipes=[str(recipe_dir)], conan_requirements=None
         )
 
     def test_multiple_recipes_validated(self, tmp_path):
@@ -161,7 +143,7 @@ class TestRecipeValidation:
             validate_setup_args(
                 conanfile=".",
                 conan_recipes=[str(valid_recipe), str(invalid_recipe)],
-                conan_requirements=None
+                conan_requirements=None,
             )
 
         # Should report the invalid one
@@ -177,7 +159,7 @@ class TestMutuallyExclusiveOptions:
             validate_setup_args(
                 conanfile="/custom/path",
                 conan_recipes=None,
-                conan_requirements=["fmt/10.0.0"]
+                conan_requirements=["fmt/10.0.0"],
             )
 
         error_msg = str(exc_info.value)
@@ -189,9 +171,7 @@ class TestMutuallyExclusiveOptions:
         """Test that default conanfile (.) with requirements is accepted."""
         # This is the common case - should work
         validate_setup_args(
-            conanfile=".",
-            conan_recipes=None,
-            conan_requirements=["fmt/10.0.0"]
+            conanfile=".", conan_recipes=None, conan_requirements=["fmt/10.0.0"]
         )
 
 
@@ -204,7 +184,7 @@ class TestErrorMessageQuality:
             validate_setup_args(
                 conanfile="/nonexistent",
                 conan_recipes=["/fake/recipe"],
-                conan_requirements=["invalid"]
+                conan_requirements=["invalid"],
             )
 
         error_msg = str(exc_info.value)
@@ -218,11 +198,13 @@ class TestErrorMessageQuality:
             validate_setup_args(
                 conanfile="/nonexistent",
                 conan_recipes=["/fake/recipe"],
-                conan_requirements=["invalid"]
+                conan_requirements=["invalid"],
             )
 
         error_msg = str(exc_info.value)
         # All three problems should be mentioned
         assert "nonexistent" in error_msg  # conanfile issue
-        assert "fake/recipe" in error_msg or "does not exist" in error_msg  # recipe issue
+        assert (
+            "fake/recipe" in error_msg or "does not exist" in error_msg
+        )  # recipe issue
         assert "invalid" in error_msg  # requirement issue

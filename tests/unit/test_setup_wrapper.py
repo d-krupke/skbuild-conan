@@ -4,23 +4,26 @@ Unit tests for setup_wrapper module.
 These tests validate verbosity detection, argument parsing, and the
 main setup() function with mocked ConanHelper and skbuild.
 """
+
 import os
 import sys
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from skbuild_conan.exceptions import (
+    ConanDependencyError,
+    ConanNetworkError,
+    ConanVersionError,
+)
+from skbuild_conan.logging_utils import LogLevel
 from skbuild_conan.setup_wrapper import (
     _detect_verbosity_from_args,
     parse_args,
+)
+from skbuild_conan.setup_wrapper import (
     setup as conan_setup,
 )
-from skbuild_conan.logging_utils import LogLevel
-from skbuild_conan.exceptions import (
-    ConanVersionError,
-    ConanNetworkError,
-    ConanDependencyError,
-)
-
 
 # ---------------------------------------------------------------------------
 # _detect_verbosity_from_args
@@ -145,6 +148,57 @@ class TestSetup:
         assert call_kwargs["name"] == "testpkg"
         assert call_kwargs["version"] == "1.0"
 
+    def test_forwards_profile_settings(self, monkeypatch):
+        """Test that conan_profile_settings (e.g. the C++ standard) reach ConanHelper."""
+        monkeypatch.setattr(sys, "argv", ["setup.py"])
+
+        mock_helper_cls = MagicMock()
+        mock_helper_cls.return_value.cmake_args.return_value = []
+        mock_helper_cls.return_value.generate_dependency_report.return_value = ""
+
+        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
+            conan_setup(
+                wrapped_setup=MagicMock(return_value=None),
+                conan_requirements=["fmt/10.0.0"],
+                conan_profile_settings={"compiler.cppstd": "20"},
+                name="testpkg",
+            )
+
+        settings = mock_helper_cls.call_args.kwargs["settings"]
+        assert settings["compiler.cppstd"] == "20"
+
+    def test_profile_settings_not_mutated(self, monkeypatch):
+        """The caller's dict must not be modified by the libcxx workaround.
+
+        The workaround only runs on Linux, so `platform.system` is pinned --
+        otherwise this assertion is vacuously true on macOS and Windows and
+        would not catch a regression there.
+        """
+        monkeypatch.setattr(sys, "argv", ["setup.py"])
+        monkeypatch.setattr(
+            "skbuild_conan.setup_wrapper.platform.system", lambda: "Linux"
+        )
+
+        user_settings = {"compiler.cppstd": "20"}
+
+        mock_helper_cls = MagicMock()
+        mock_helper_cls.return_value.cmake_args.return_value = []
+        mock_helper_cls.return_value.generate_dependency_report.return_value = ""
+
+        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
+            conan_setup(
+                wrapped_setup=MagicMock(return_value=None),
+                conan_requirements=["fmt/10.0.0"],
+                conan_profile_settings=user_settings,
+                name="testpkg",
+            )
+
+        # The workaround must have been applied to the copy...
+        settings = mock_helper_cls.call_args.kwargs["settings"]
+        assert settings["compiler.libcxx"] == "libstdc++11"
+        # ...and not to the caller's dict.
+        assert user_settings == {"compiler.cppstd": "20"}
+
     def test_calls_install_with_requirements(self, monkeypatch):
         """Test that ConanHelper.install is called with the right requirements."""
         _, mock_helper = self._mock_setup(
@@ -178,12 +232,14 @@ class TestSetup:
 
         mock_helper_cls = MagicMock(side_effect=ConanVersionError("1.0", "2.x"))
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(SystemExit) as exc_info:
-                conan_setup(
-                    conan_requirements=["fmt/10.0.0"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            conan_setup(
+                conan_requirements=["fmt/10.0.0"],
+                name="testpkg",
+            )
 
         assert exc_info.value.code == 1
 
@@ -194,12 +250,14 @@ class TestSetup:
         mock_helper_cls = MagicMock()
         mock_helper_cls.return_value.install.side_effect = ConanNetworkError("timeout")
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(SystemExit) as exc_info:
-                conan_setup(
-                    conan_requirements=["fmt/10.0.0"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            conan_setup(
+                conan_requirements=["fmt/10.0.0"],
+                name="testpkg",
+            )
 
         assert exc_info.value.code == 1
 
@@ -210,12 +268,14 @@ class TestSetup:
         mock_helper_cls = MagicMock()
         mock_helper_cls.return_value.install.side_effect = KeyboardInterrupt()
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(SystemExit) as exc_info:
-                conan_setup(
-                    conan_requirements=["fmt/10.0.0"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            conan_setup(
+                conan_requirements=["fmt/10.0.0"],
+                name="testpkg",
+            )
 
         assert exc_info.value.code == 130
 
@@ -224,14 +284,18 @@ class TestSetup:
         monkeypatch.setattr(sys, "argv", ["setup.py"])
 
         mock_helper_cls = MagicMock()
-        mock_helper_cls.return_value.install.side_effect = ConanDependencyError("missing")
+        mock_helper_cls.return_value.install.side_effect = ConanDependencyError(
+            "missing"
+        )
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(SystemExit) as exc_info:
-                conan_setup(
-                    conan_requirements=["fmt/10.0.0"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            conan_setup(
+                conan_requirements=["fmt/10.0.0"],
+                name="testpkg",
+            )
 
         assert exc_info.value.code == 1
 
@@ -242,12 +306,14 @@ class TestSetup:
         mock_helper_cls = MagicMock()
         mock_helper_cls.return_value.install.side_effect = RuntimeError("unexpected")
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(RuntimeError, match="unexpected"):
-                conan_setup(
-                    conan_requirements=["fmt/10.0.0"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(RuntimeError, match="unexpected"),
+        ):
+            conan_setup(
+                conan_requirements=["fmt/10.0.0"],
+                name="testpkg",
+            )
 
     def test_linux_abi_workaround(self, monkeypatch):
         """Test that Linux ABI workaround sets compiler.libcxx."""
@@ -260,8 +326,10 @@ class TestSetup:
 
         mock_wrapped = MagicMock()
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls), \
-             patch("skbuild_conan.setup_wrapper.platform") as mock_platform:
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            patch("skbuild_conan.setup_wrapper.platform") as mock_platform,
+        ):
             mock_platform.system.return_value = "Linux"
             conan_setup(
                 conan_requirements=["fmt/10.0.0"],
@@ -284,8 +352,10 @@ class TestSetup:
 
         mock_wrapped = MagicMock()
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls), \
-             patch("skbuild_conan.setup_wrapper.platform") as mock_platform:
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            patch("skbuild_conan.setup_wrapper.platform") as mock_platform,
+        ):
             mock_platform.system.return_value = "Windows"
             conan_setup(
                 conan_requirements=["fmt/10.0.0"],
@@ -302,12 +372,14 @@ class TestSetup:
 
         mock_helper_cls = MagicMock()
 
-        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
-            with pytest.raises(SystemExit) as exc_info:
-                conan_setup(
-                    conan_requirements=["invalid_no_slash"],
-                    name="testpkg",
-                )
+        with (
+            patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            conan_setup(
+                conan_requirements=["invalid_no_slash"],
+                name="testpkg",
+            )
 
         assert exc_info.value.code == 1
         # ConanHelper should never have been instantiated
