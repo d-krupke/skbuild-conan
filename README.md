@@ -76,6 +76,7 @@ pip install --quiet .
 ```
 
 The same works with `setup.py`:
+
 ```bash
 python setup.py install --verbose
 python setup.py build -vv
@@ -106,12 +107,14 @@ pip install .
 **Priority**: Command-line flags take precedence over the environment variable. If you set both, the `--verbose`/`--quiet` flags will be used.
 
 After installation, a dependency report is generated at `.conan/<build_type_lowercase>/dependency-report.txt` (e.g. `.conan/release/dependency-report.txt`) showing:
+
 - What dependencies were requested
 - What versions were resolved
 - Build configuration used
 - Local recipes installed
 
 This transparency helps with:
+
 - Understanding exactly what's being built
 - Debugging version conflicts
 - Security auditing
@@ -195,7 +198,7 @@ setup(
 ```
 
 If you do not, conan uses the value it auto-detected via `conan profile detect`.
-That value is the standard your compiler enables *without any flags*, which is
+That value is the standard your compiler enables _without any flags_, which is
 not the latest one it supports — it can be as low as `14`, and it differs between
 platforms and compiler versions. This is a common cause of builds that work on
 your machine but fail elsewhere: CGAL, for example, checks for C++17 and aborts
@@ -223,7 +226,7 @@ A few details worth knowing:
   to 20 has been modified to 17 by .../CMakeLists.txt
   ```
 
-  If a target needs a *minimum* standard, declare it on the target instead —
+  If a target needs a _minimum_ standard, declare it on the target instead —
   this composes with a higher value from the toolchain rather than fighting it:
 
   ```cmake
@@ -388,6 +391,7 @@ Updating the Python distribution, in this case in conda via `conda update python
 We welcome contributions from the community! Whether you're fixing a bug, adding a feature, or improving documentation, your help is appreciated.
 
 **Quick Start:**
+
 - 📖 Read [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines
 - 🔧 See [DEVELOPMENT.md](DEVELOPMENT.md) for technical development documentation
 - 🐛 Report bugs via [GitHub Issues](https://github.com/d-krupke/skbuild-conan/issues)
@@ -406,6 +410,8 @@ Please note that response times may vary as we prioritize based on available tim
   passed via `conan_recipes` are now built with the same `conan_profile_settings` as the
   rest of the dependencies, instead of the profile defaults (which caused them to be
   built twice). (#16)
+  The examples now include `<fmt/format.h>` instead of the `<fmt/core.h>` that no
+  longer provides `fmt::format` since fmt 12.
 - _1.5.0_ Support for conan's `cmake_layout` in conanfiles. Previously, using `[layout] cmake_layout` in a `conanfile.txt` (or `cmake_layout(self)` in `conanfile.py`) caused a "conan_toolchain.cmake not found" error because the generators are placed under `build/{BuildType}/generators/` instead of directly in the output folder. (#7)
 - _1.4.0_ Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)

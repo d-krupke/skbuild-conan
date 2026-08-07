@@ -16,6 +16,7 @@ project(simple_skbuild_conan_example CXX)
 # setup.py), and overriding it here would compile the bindings against a
 # different standard than the dependencies. Instead, each target below declares
 # the standard it *at least* needs via `target_compile_features`.
+
 # The code needs to be compiled as PIC to build the shared lib for python.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Workaround for some Macs (if I remember correctly)
