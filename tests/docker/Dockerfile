@@ -11,9 +11,14 @@ FROM ${BASE_IMAGE}
 # package manager instead of maintaining one Dockerfile per family.
 #
 # We need: a C++ toolchain, Python *with development headers* (the examples
-# build a native module), and git/curl because the examples fetch pybind11 via
-# FetchContent/CPM. cmake and ninja deliberately come from pip below, matching
-# what the examples declare in their `pyproject.toml`.
+# build a native module), and git because CPM may fetch pybind11 over git.
+# cmake and ninja deliberately come from pip below, matching what the examples
+# declare in their `pyproject.toml`.
+#
+# The RPM branch deliberately omits `curl`: RHEL-family images ship
+# `curl-minimal`, and pulling in full `curl` is a package conflict rather than
+# an upgrade. Nothing here needs the curl *binary* anyway — CMake's
+# `file(DOWNLOAD)`, which FetchContent and CPM use, links its own libcurl.
 RUN set -eux; \
     if command -v apt-get >/dev/null 2>&1; then \
         export DEBIAN_FRONTEND=noninteractive; \
@@ -23,10 +28,10 @@ RUN set -eux; \
             python3 python3-dev python3-venv; \
         rm -rf /var/lib/apt/lists/*; \
     elif command -v dnf >/dev/null 2>&1; then \
-        dnf -y install gcc-c++ make git curl ca-certificates python3 python3-devel; \
+        dnf -y install gcc-c++ make git ca-certificates python3 python3-devel; \
         dnf clean all; \
     elif command -v yum >/dev/null 2>&1; then \
-        yum -y install gcc-c++ make git curl ca-certificates python3 python3-devel; \
+        yum -y install gcc-c++ make git ca-certificates python3 python3-devel; \
         yum clean all; \
     else \
         echo "unsupported base image: no apt-get, dnf or yum found" >&2; \
