@@ -9,5 +9,8 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     python_requires=">=3.7",  # lowest python version supported.
     install_requires=[],  # Python Dependencies
     # Dependencies come from conanfile.txt (which uses cmake_layout)
+    # Pin the C++ standard instead of relying on the compiler's default. See
+    # https://github.com/d-krupke/skbuild-conan#setting-the-c-standard
+    conan_profile_settings={"compiler.cppstd": "17"},
     cmake_minimum_required_version="3.23",
 )

@@ -9,8 +9,11 @@ if(CXX)
 endif()
 project(cgal_skbuild_conan_example CXX) # Feel free to add more project
                                         # information
-set(CMAKE_CXX_STANDARD 17) # Using C++-17 (most features with good support at
-                           # 2022)
+# NOTE: We deliberately do NOT `set(CMAKE_CXX_STANDARD ...)` here. The conan
+# toolchain sets it from `compiler.cppstd` (see `conan_profile_settings` in
+# setup.py), and overriding it here would compile the bindings against a
+# different standard than CGAL and the other dependencies. The bindings target
+# declares the standard it *at least* needs via `target_compile_features`.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
                                         # to build the shared lib for python.
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)

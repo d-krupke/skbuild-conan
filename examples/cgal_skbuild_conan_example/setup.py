@@ -10,6 +10,11 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     install_requires=[],  # Python Dependencies
     conan_recipes=["./conans/cgal_custom"],  # Conan Recipes
     conan_requirements=["fmt/[>=10.0.0]", "cgal/[>=6.0]"],  # C++ Dependencies
+    # CGAL 6 requires C++17. Do not rely on the compiler's default standard,
+    # which can be as low as C++14 on some platforms (notably Windows/MSVC).
+    # This setting also applies to the local recipe in `conan_recipes`.
+    # See https://github.com/d-krupke/skbuild-conan#setting-the-c-standard
+    conan_profile_settings={"compiler.cppstd": "17"},
     cmake_minimum_required_version="3.23",
     conan_env={"CONAN_HOME": "./conan/cache"},
 )

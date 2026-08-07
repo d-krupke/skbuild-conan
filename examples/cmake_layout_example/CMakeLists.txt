@@ -4,7 +4,9 @@ if(CXX)
   enable_language(CXX)
 endif()
 project(cmake_layout_example CXX)
-set(CMAKE_CXX_STANDARD 17)
+# The C++ standard comes from the conan toolchain (`compiler.cppstd`, set in
+# setup.py). Do not override CMAKE_CXX_STANDARD here; declare a per-target
+# minimum with `target_compile_features` instead.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 include(GNUInstallDirs)
@@ -23,6 +25,7 @@ FetchContent_MakeAvailable(pybind11)
 
 # PyBind11 bindings
 pybind11_add_module(_bindings src/cmake_layout_example/_bindings.cpp)
+target_compile_features(_bindings PRIVATE cxx_std_17)
 target_link_libraries(_bindings PRIVATE fmt::fmt)
 target_compile_options(
   _bindings PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>")

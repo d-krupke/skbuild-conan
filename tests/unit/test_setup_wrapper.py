@@ -145,6 +145,45 @@ class TestSetup:
         assert call_kwargs["name"] == "testpkg"
         assert call_kwargs["version"] == "1.0"
 
+    def test_forwards_profile_settings(self, monkeypatch):
+        """Test that conan_profile_settings (e.g. the C++ standard) reach ConanHelper."""
+        monkeypatch.setattr(sys, "argv", ["setup.py"])
+
+        mock_helper_cls = MagicMock()
+        mock_helper_cls.return_value.cmake_args.return_value = []
+        mock_helper_cls.return_value.generate_dependency_report.return_value = ""
+
+        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
+            conan_setup(
+                wrapped_setup=MagicMock(return_value=None),
+                conan_requirements=["fmt/10.0.0"],
+                conan_profile_settings={"compiler.cppstd": "20"},
+                name="testpkg",
+            )
+
+        settings = mock_helper_cls.call_args.kwargs["settings"]
+        assert settings["compiler.cppstd"] == "20"
+
+    def test_profile_settings_not_mutated(self, monkeypatch):
+        """The caller's dict must not be modified by the libcxx workaround."""
+        monkeypatch.setattr(sys, "argv", ["setup.py"])
+
+        user_settings = {"compiler.cppstd": "20"}
+
+        mock_helper_cls = MagicMock()
+        mock_helper_cls.return_value.cmake_args.return_value = []
+        mock_helper_cls.return_value.generate_dependency_report.return_value = ""
+
+        with patch("skbuild_conan.setup_wrapper.ConanHelper", mock_helper_cls):
+            conan_setup(
+                wrapped_setup=MagicMock(return_value=None),
+                conan_requirements=["fmt/10.0.0"],
+                conan_profile_settings=user_settings,
+                name="testpkg",
+            )
+
+        assert user_settings == {"compiler.cppstd": "20"}
+
     def test_calls_install_with_requirements(self, monkeypatch):
         """Test that ConanHelper.install is called with the right requirements."""
         _, mock_helper = self._mock_setup(

@@ -399,6 +399,32 @@ class TestInstallFromPaths:
             # Should not raise — package is already cached
             helper.install_from_paths([str(recipe_dir)])
 
+    def test_create_uses_profile_settings(self, tmp_path):
+        """Local recipes must be built with the same settings as the dependencies.
+
+        Otherwise a recipe would first be built with the profile defaults (e.g.
+        the auto-detected `compiler.cppstd`) and then rebuilt by `install` to
+        match the requested settings.
+        """
+        recipe_dir = tmp_path / "recipe"
+        recipe_dir.mkdir()
+        (recipe_dir / "conanfile.py").touch()
+
+        helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})
+
+        with patch.object(helper, "_conan_to_json", side_effect=[
+            {"name": "mypkg", "version": "1.0"},
+            {"Local Cache": {}},  # not cached yet -> must be created
+        ]), patch.object(helper, "_conan_cli") as mock_cli:
+            helper.install_from_paths([str(recipe_dir)])
+
+        cmd = mock_cli.call_args[0][0]
+        assert cmd[0] == "create"
+        assert "compiler.cppstd=20" in cmd
+        assert cmd[cmd.index("compiler.cppstd=20") - 1] == "-s"
+        # build_type must still be forwarded
+        assert "build_type=Release" in cmd
+
 
 # ---------------------------------------------------------------------------
 # install
@@ -434,6 +460,18 @@ class TestInstall:
         cmd = mock_cli.call_args[0][0]
         assert "install" in cmd
         assert "/my/project" in cmd
+
+    def test_install_forwards_profile_settings(self, tmp_path):
+        """Test that settings such as compiler.cppstd reach the install command."""
+        helper = _make_helper(tmp_path, settings={"compiler.cppstd": "20"})
+
+        with patch.object(helper, "create_profile"), \
+             patch.object(helper, "_conan_cli") as mock_cli:
+            helper.install(requirements=["fmt/10.0.0"])
+
+        cmd = mock_cli.call_args[0][0]
+        assert "compiler.cppstd=20" in cmd
+        assert cmd[cmd.index("compiler.cppstd=20") - 1] == "-s"
 
     def test_install_wraps_unexpected_error(self, tmp_path):
         """Test that unexpected errors are wrapped in ConanDependencyError."""

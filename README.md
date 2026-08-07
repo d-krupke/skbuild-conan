@@ -139,8 +139,10 @@ The added options are
   local recipes. Just the path to the folder containing the `conanfile.py`.
 - `conan_requirements`: Instead of providing a conanfile, you can simply state
   the dependencies here. E.g. `["fmt/[>=10.0.0]"]` to add fmt in version >=10.0.0.
-- `conan_profile_settings`: Overwrite conan profile settings. Sometimes necessary
-  because of ABI-problems, etc.
+- `conan_profile_settings`: Overwrite conan profile settings. You should use this to
+  pin the C++ standard, e.g. `{"compiler.cppstd": "20"}` (see
+  [Setting the C++ standard](#setting-the-c-standard)). Also necessary for
+  ABI-problems, etc.
 - `wrapped_setup`: The setup-method that is going to be wrapped. This would allow
   you to extend already extended setup functions. By default, it is the `setup`
   of `skbuild`, which extends the `setup` of `setuptools`.
@@ -173,12 +175,65 @@ setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     python_requires=">=3.7",  # lowest python version supported.
     install_requires=[],  # Python Dependencies
     conan_requirements=["fmt/[>=10.0.0]"],  # C++ Dependencies
+    conan_profile_settings={"compiler.cppstd": "17"},  # C++ standard
     cmake_minimum_required_version="3.23",
 )
 ```
 
 See [./examples/simple_skbuild_conan_example](./examples/simple_skbuild_conan_example)
 for a full example.
+
+## Setting the C++ standard
+
+**Always pin the C++ standard your bindings are built against.**
+
+```python
+setup(
+    ...,
+    conan_profile_settings={"compiler.cppstd": "20"},
+)
+```
+
+If you do not, conan uses the value it auto-detected via `conan profile detect`.
+That value is the standard your compiler enables *without any flags*, which is
+not the latest one it supports — it can be as low as `14`, and it differs between
+platforms and compiler versions. This is a common cause of builds that work on
+your machine but fail elsewhere: CGAL, for example, checks for C++17 and aborts
+the build if the profile says `14`. Windows/MSVC and older GCC/Clang are the
+usual offenders.
+
+Pinning the standard also makes the build reproducible: the standard becomes part
+of the conan package id, so all your dependencies are built and cached against
+the same standard as your bindings.
+
+A few details worth knowing:
+
+- **`"20"` vs `"gnu20"`**: the `gnu` prefix enables compiler extensions
+  (`-std=gnu++20` instead of `-std=c++20`). Prefer the plain value unless you
+  actually need the extensions. Valid values are e.g. `"11"`, `"14"`, `"17"`,
+  `"20"`, `"23"` and their `gnu` variants.
+- **Do not set `CMAKE_CXX_STANDARD` in your `CMakeLists.txt`.** The conan
+  toolchain already sets it (plus `CMAKE_CXX_STANDARD_REQUIRED`) from
+  `compiler.cppstd`. Overriding it after `project()` compiles your bindings
+  against a different standard than your dependencies, which can lead to subtle
+  ODR/ABI breakage. Conan will print a warning if you do:
+
+  ```
+  Warning: Standard CMAKE_CXX_STANDARD value defined in conan_toolchain.cmake
+  to 20 has been modified to 17 by .../CMakeLists.txt
+  ```
+
+  If a target needs a *minimum* standard, declare it on the target instead —
+  this composes with a higher value from the toolchain rather than fighting it:
+
+  ```cmake
+  target_compile_features(_bindings PRIVATE cxx_std_17)
+  ```
+
+- The setting applies to everything skbuild-conan builds, including the local
+  recipes you pass via `conan_recipes`.
+
+All examples in [./examples](./examples) follow this pattern.
 
 ## Examples
 
@@ -214,6 +269,27 @@ It may need some more documentation, but Efi put a lot of thought into efficienc
 This problem should be automatically fixed. Please open an issue if you still encounter it.
 
 See [https://docs.conan.io/1/howtos/manage_gcc_abi.html](https://docs.conan.io/1/howtos/manage_gcc_abi.html) for more details.
+
+### C++ standard problems: `requires C++17` / `no member named 'optional' in namespace 'std'`
+
+If a dependency refuses to build with a message such as
+
+```
+ERROR: cgal/6.0.1: Invalid: cgal requires C++17. Your compiler is set to C++14.
+```
+
+or your own code fails to compile with errors about C++17/C++20 features not
+existing, your conan profile has a lower `compiler.cppstd` than you expect.
+The auto-detected profile uses the standard that is active without any compiler
+flags, not the newest one the compiler supports.
+
+Pin it explicitly in your `setup.py`:
+
+```python
+conan_profile_settings={"compiler.cppstd": "17"},  # or "20", "23", ...
+```
+
+See [Setting the C++ standard](#setting-the-c-standard) for details.
 
 ### glibcxx problems:
 
@@ -323,6 +399,13 @@ Please note that response times may vary as we prioritize based on available tim
 
 ## Changelog
 
+- _1.5.1_ Documentation on [setting the C++ standard](#setting-the-c-standard) via
+  `conan_profile_settings={"compiler.cppstd": ...}`, and all examples updated to pin it.
+  The examples no longer set `CMAKE_CXX_STANDARD` in their `CMakeLists.txt`, as this
+  overrides the value the conan toolchain derives from `compiler.cppstd`. Local recipes
+  passed via `conan_recipes` are now built with the same `conan_profile_settings` as the
+  rest of the dependencies, instead of the profile defaults (which caused them to be
+  built twice). (#16)
 - _1.5.0_ Support for conan's `cmake_layout` in conanfiles. Previously, using `[layout] cmake_layout` in a `conanfile.txt` (or `cmake_layout(self)` in `conanfile.py`) caused a "conan_toolchain.cmake not found" error because the generators are placed under `build/{BuildType}/generators/` instead of directly in the output folder. (#7)
 - _1.4.0_ Major transparency and usability improvements:
   - **Structured logging** with configurable verbosity levels (quiet/normal/verbose/debug)

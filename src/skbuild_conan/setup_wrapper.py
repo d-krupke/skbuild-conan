@@ -138,8 +138,12 @@ def setup(
         local recipes. Just the path to the folder containing the `conanfile.py`.
     :param conan_requirements: Instead of providing a conanfile, you can simply state
         the dependencies here. E.g. `["fmt/[>=10.0.0]"]` to add fmt in version >=10.0.0.
-    :param conan_profile_settings: Overwrite conan profile settings. Sometimes necessary
-        because of ABI-problems, etc.
+    :param conan_profile_settings: Overwrite conan profile settings. You should use
+        this to pin the C++ standard your bindings are built against, e.g.
+        `{"compiler.cppstd": "20"}`. Otherwise, the auto-detected profile uses
+        whatever standard the compiler enables without any flags, which can be as
+        low as C++14 on some platforms and makes dependencies such as CGAL fail.
+        Also necessary for ABI-problems, etc.
     :param wrapped_setup: The setup-method that is going to be wrapped. This would allow
         you to extend already extended setup functions. By default, it is the `setup`
         of `skbuild`, which extends the `setup` of `setuptools`.

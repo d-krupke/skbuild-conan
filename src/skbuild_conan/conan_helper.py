@@ -259,11 +259,14 @@ class ConanHelper:
                     continue
 
                 self.logger.verbose(f"Building and caching {package_id}...")
-                cmd = [
-                    "create",
-                    path,
-                    "-pr",
-                    self.profile,
+                cmd = ["create", path, "-pr", self.profile]
+                # The same settings as for `install`. Without them, the recipe
+                # would be built with the profile defaults (e.g. the
+                # auto-detected `compiler.cppstd`) and the later `install` would
+                # have to build it a second time to match the requested settings.
+                for key, val in self.settings.items():
+                    cmd += ["-s", f"{key}={val}"]
+                cmd += [
                     "-s",
                     f"build_type={self.build_type}",
                     "--build=missing",

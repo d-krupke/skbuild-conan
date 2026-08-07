@@ -5,6 +5,9 @@ find_package(CGAL REQUIRED)
 find_package(fmt REQUIRED)
 
 pybind11_add_module(_cgal_bindings ./_cgal_bindings.cpp)
+# CGAL 6 requires at least C++-17. This declares a minimum; a higher standard
+# coming from the conan toolchain (`compiler.cppstd`) is used as-is.
+target_compile_features(_cgal_bindings PRIVATE cxx_std_17)
 
 if(TARGET CGAL::CGAL)
     set(CGAL_TARGET CGAL::CGAL)
