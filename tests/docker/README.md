@@ -72,6 +72,20 @@ so build artefacts never touch your checkout and nothing ends up owned by root.
   `conan_env={"CONAN_HOME": "./conan/cache"}`, which points the cache inside the
   example directory and therefore bypasses the shared volume — it would rebuild
   CGAL from scratch on every run.
+- **`--with-cgal` does not work on the oldest images**, and is skipped there.
+  ConanCenter's prebuilt `b2` (boost's build tool) is linked against
+  `GLIBC_2.34`, so boost cannot be built on anything older:
+
+  ```
+  b2: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found
+  ```
+
+  That is a property of the published binary, not of this project. It applies to
+  exactly the images kept for the #16 reproduction — `gcc10` and `debian11` are
+  both glibc 2.31 — so the two goals are mutually exclusive: those images test
+  the old-compiler default, `ubuntu2204` and newer test CGAL. The skip is
+  reported in the summary rather than passing silently.
+
 - Alpine/musl is intentionally absent: conancenter ships glibc binaries, so it
   is not a supported target.
 - The first run of an image is slow (toolchain install plus a cold conan

@@ -133,12 +133,19 @@ for entry in "${IMAGES[@]}"; do
         rc=1
     fi
     cppstd="$(grep -m1 '^DETECTED_CPPSTD=' "$out_log" | cut -d= -f2 || true)"
+    skipped="$(grep -m1 '^SKIPPED_EXAMPLES=' "$out_log" | cut -d= -f2- || true)"
     rm -f "$out_log"
 
+    # A skip is not a failure, but it must not read as full coverage either.
+    note="${cppstd:-unknown}"
+    if [ -n "$skipped" ]; then
+        note="${note}  (skipped:${skipped})"
+    fi
+
     if [ "$rc" = 0 ]; then
-        results+=("${label}|PASS|${cppstd:-unknown}")
+        results+=("${label}|PASS|${note}")
     else
-        results+=("${label}|FAIL|${cppstd:-unknown}")
+        results+=("${label}|FAIL|${note}")
         overall_rc=1
     fi
 done

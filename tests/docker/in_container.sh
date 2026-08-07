@@ -42,10 +42,36 @@ pip install --no-cache-dir -e /work
 log "Unit tests"
 cd /work && python -m pytest tests/unit -q
 
+# ConanCenter's prebuilt `b2` (boost's build tool) is linked against GLIBC_2.34,
+# so boost -- and therefore CGAL -- cannot be built on an older image at all:
+#
+#   b2: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found
+#
+# That is a property of the published binary, not of skbuild-conan, and it hits
+# exactly the old images we keep for the #16 reproduction (gcc10 and debian11
+# are both glibc 2.31). Skip the CGAL example there, loudly, rather than
+# reporting a failure that no change to this project could fix.
+MIN_GLIBC_FOR_BOOST=2.34
+GLIBC_VERSION="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
+
+skipped=""
 overall_rc=0
 for example in $EXAMPLES; do
     example_dir="/work/examples/${example}"
     [ -d "$example_dir" ] || fail "no such example: $example"
+
+    case "$example" in
+        *cgal*)
+            if [ -n "$GLIBC_VERSION" ] && [ "$(printf '%s\n%s\n' \
+                    "$MIN_GLIBC_FOR_BOOST" "$GLIBC_VERSION" | sort -V | head -1)" \
+                    != "$MIN_GLIBC_FOR_BOOST" ]; then
+                printf '\n\033[1;33m==> SKIP %s: glibc %s < %s, boost cannot build here\033[0m\n' \
+                    "$example" "$GLIBC_VERSION" "$MIN_GLIBC_FOR_BOOST"
+                skipped="${skipped} ${example}"
+                continue
+            fi
+            ;;
+    esac
 
     log "Building example: ${example}"
     build_log="/tmp/build_${example}.log"
@@ -89,5 +115,9 @@ for example in $EXAMPLES; do
 done
 
 echo
+# Report what was not covered, so a green run is not mistaken for full coverage.
+if [ -n "$skipped" ]; then
+    echo "SKIPPED_EXAMPLES=${skipped# }"
+fi
 echo "DETECTED_CPPSTD=${DETECTED_CPPSTD:-unset}"
 exit "$overall_rc"
